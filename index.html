@@ -51,47 +51,11 @@ hus - house"></textarea></div>
             <input type="text" id="answer" placeholder="Trykk her og skriv ✨" autocomplete="off" enterkeyhint="done">
             <button id="checkBtn" type="button">Sjekk svaret 🚀</button>
             <div id="feedback" role="status"></div>
-            <button id="readEnglishBtn" class="replay-button hidden" type="button">🔊 Les det engelske ordet</button>
+            <button id="readEnglishBtn" class="replay-button hidden" type="button" aria-label="Spill av det engelske ordet">🔊 Spill av engelsk ord</button>
         </section>
     </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="script.js"></script>
-<script>
-    // Vis opplesningsknappen når et glosesvar er feil.
-    document.addEventListener("DOMContentLoaded", () => {
-        const feedback = document.getElementById("feedback");
-        const question = document.getElementById("question");
-        const button = document.getElementById("readEnglishBtn");
-        const defaultGloser = { hund: "dog", katt: "cat", hus: "house", bil: "car", bok: "book", skole: "school" };
-
-        function getEnglishWord() {
-            const norwegian = question.textContent.replace(/^Hva er engelsk for:\s*/i, "").trim().toLowerCase();
-            try {
-                const custom = JSON.parse(localStorage.getItem("gloserCustom") || "[]");
-                const match = custom.find(item => item.no && item.no.toLowerCase() === norwegian);
-                if (match) return match.en;
-            } catch (_) { /* Bruk standardordene dersom lagringen ikke kan leses. */ }
-            return defaultGloser[norwegian];
-        }
-
-        function updateButton() {
-            const shouldShow = feedback.classList.contains("wrong");
-            button.classList.toggle("hidden", !shouldShow);
-        }
-
-        new MutationObserver(updateButton).observe(feedback, { attributes: true, childList: true, characterData: true });
-        button.addEventListener("click", () => {
-            const word = getEnglishWord();
-            if (word && "speechSynthesis" in window) {
-                speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(word);
-                utterance.lang = "en-US";
-                utterance.rate = 0.9;
-                speechSynthesis.speak(utterance);
-            }
-        });
-    });
-</script>
 </body>
 </html>
