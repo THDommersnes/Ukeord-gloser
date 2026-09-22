@@ -28,10 +28,18 @@ let score = 0;
 let answerLocked = false;
 
 function shuffle(array) {
-    return array.sort(() => Math.random() - 0.5);
+    const shuffled = [...array];
+
+    for (let index = shuffled.length - 1; index > 0; index--) {
+        const randomIndex = Math.floor(Math.random() * (index + 1));
+        [shuffled[index], shuffled[randomIndex]] =
+            [shuffled[randomIndex], shuffled[index]];
+    }
+
+    return shuffled;
 }
 
-function speakText(text) {
+function speakText(text, language = "nb-NO") {
     if (!text || !("speechSynthesis" in window)) {
         return;
     }
@@ -39,7 +47,7 @@ function speakText(text) {
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "nb-NO";
+    utterance.lang = language;
     utterance.rate = 0.9;
     utterance.pitch = 1;
     utterance.volume = 1;
@@ -124,7 +132,7 @@ function setCustomWordsHidden(hidden) {
 
     toggleWordsBtn.textContent = hidden
         ? "Vis egne ord"
-        : "Skjul egne ord";
+        : "🙈 Skjul egne ord";
 
     toggleWordsBtn.setAttribute("aria-pressed", String(hidden));
     toggleWordsBtn.setAttribute(
@@ -213,11 +221,9 @@ function startGame(mode) {
         return;
     }
 
-    if (mode === "ukeord") {
-        questions = shuffle([...getUkeordList()]);
-    } else {
-        questions = shuffle([...getGloserList()]);
-    }
+    questions = mode === "ukeord"
+        ? shuffle(getUkeordList())
+        : shuffle(getGloserList());
 
     if (questions.length === 0) {
         questions = mode === "ukeord"
@@ -274,7 +280,11 @@ function showQuestion() {
 
     if (selectedMode === "ukeord") {
         question.innerHTML = "🎧 Hør ordet og skriv det du hørte";
-        setTimeout(() => speakText(questions[currentQuestion]), 500);
+        setTimeout(() => {
+            if (!answerLocked && questions[currentQuestion]) {
+                speakText(questions[currentQuestion]);
+            }
+        }, 500);
     } else {
         question.innerHTML = "Hva er engelsk for:<br><br>" +
             `<b>${questions[currentQuestion].no}</b>`;
@@ -291,12 +301,7 @@ function checkAnswer() {
     const scoreLabel = document.getElementById("score");
     const checkBtn = document.getElementById("checkBtn");
 
-    if (
-        !answerInput ||
-        !feedback ||
-        !scoreLabel ||
-        questions.length === 0
-    ) {
+    if (!answerInput || !feedback || !scoreLabel || questions.length === 0) {
         return;
     }
 
@@ -307,12 +312,13 @@ function checkAnswer() {
     }
 
     const answer = answerInput.value.trim().toLowerCase();
-    let correctAnswer;
+    const currentEntry = questions[currentQuestion];
+    const correctAnswer = selectedMode === "ukeord"
+        ? currentEntry.toLowerCase()
+        : currentEntry.en.toLowerCase();
 
-    if (selectedMode === "ukeord") {
-        correctAnswer = questions[currentQuestion].toLowerCase();
-    } else {
-        correctAnswer = questions[currentQuestion].en.toLowerCase();
+    if (selectedMode === "gloser") {
+        speakText(currentEntry.en, "en-US");
     }
 
     if (answer === correctAnswer) {
@@ -321,22 +327,26 @@ function checkAnswer() {
 
         feedback.className = "correct";
         feedback.innerHTML = "✅ Riktig!";
+
+        currentQuestion++;
+
+        if (currentQuestion < questions.length) {
+            setTimeout(showQuestion, 1500);
+        } else {
+            setTimeout(showResult, 1500);
+        }
     } else {
         feedback.className = "wrong";
-        feedback.innerHTML =
-            `❌ Feil<br>Riktig svar: ${correctAnswer}`;
-    }
+        feedback.innerHTML = "❌ Ikke helt riktig – prøv igjen!";
 
-    currentQuestion++;
+        // The same question remains active until the answer is correct.
+        answerLocked = false;
+        answerInput.disabled = false;
+        answerInput.select();
 
-    if (currentQuestion < questions.length) {
-        setTimeout(() => {
-            showQuestion();
-        }, 1500);
-    } else {
-        setTimeout(() => {
-            showResult();
-        }, 1500);
+        if (checkBtn) {
+            checkBtn.disabled = false;
+        }
     }
 }
 
@@ -383,10 +393,8 @@ function initApp() {
     const checkBtn = document.getElementById("checkBtn");
     const answerInput = document.getElementById("answer");
     const replayAudioBtn = document.getElementById("replayAudioBtn");
-    const saveCustomBtn =
-        document.getElementById("saveCustomBtn");
-    const toggleWordsBtn =
-        document.getElementById("toggleWordsBtn");
+    const saveCustomBtn = document.getElementById("saveCustomBtn");
+    const toggleWordsBtn = document.getElementById("toggleWordsBtn");
 
     if (checkBtn) {
         checkBtn.addEventListener("click", checkAnswer);
@@ -414,11 +422,8 @@ function initApp() {
 
     if (toggleWordsBtn) {
         toggleWordsBtn.addEventListener("click", () => {
-            const customWords =
-                document.getElementById("customWords");
-
-            const isHidden =
-                customWords &&
+            const customWords = document.getElementById("customWords");
+            const isHidden = customWords &&
                 customWords.classList.contains("words-hidden");
 
             setCustomWordsHidden(!isHidden);
