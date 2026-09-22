@@ -16,7 +16,9 @@ h1 {
 }
 
 .mode-selector button,
-#checkBtn {
+#checkBtn,
+#saveCustomBtn,
+#resetCustomBtn {
     background: #0078d7;
     color: white;
     border: none;
@@ -28,8 +30,73 @@ h1 {
 }
 
 .mode-selector button:hover,
-#checkBtn:hover {
+#checkBtn:hover,
+#saveCustomBtn:hover,
+#resetCustomBtn:hover {
     background: #005fa3;
+}
+
+.secondary {
+    background: #6c757d !important;
+}
+
+.secondary:hover {
+    background: #5a6268 !important;
+}
+
+.custom-section {
+    background: white;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.custom-section h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #003366;
+}
+
+.custom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    text-align: left;
+}
+
+.custom-column {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #1d3557;
+}
+
+textarea {
+    width: 100%;
+    min-height: 160px;
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    resize: vertical;
+}
+
+.custom-actions {
+    margin-top: 15px;
+}
+
+.custom-status {
+    min-height: 24px;
+    margin-top: 12px;
+    margin-bottom: 0;
+    font-weight: bold;
+    color: #006b3c;
 }
 
 .question-box {
@@ -71,4 +138,10 @@ input {
 
 .hidden {
     display: none;
+}
+
+@media (max-width: 600px) {
+    .custom-grid {
+        grid-template-columns: 1fr;
+    }
 }
