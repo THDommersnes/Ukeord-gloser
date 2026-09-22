@@ -43,7 +43,6 @@ function startGame(mode) {
 }
 
 function showQuestion() {
-
     document.getElementById("answer").value = "";
     document.getElementById("feedback").innerHTML = "";
 
@@ -51,19 +50,15 @@ function showQuestion() {
         `${currentQuestion + 1} / ${questions.length}`;
 
     if (selectedMode === "ukeord") {
-
         document.getElementById("question").innerHTML =
             `Skriv ordet:<br><br><b>${questions[currentQuestion]}</b>`;
-
     } else {
-
         document.getElementById("question").innerHTML =
             `Hva er engelsk for:<br><br><b>${questions[currentQuestion].no}</b>`;
     }
 }
 
 function checkAnswer() {
-
     let answer =
         document.getElementById("answer")
             .value
@@ -73,43 +68,32 @@ function checkAnswer() {
     let correctAnswer;
 
     if (selectedMode === "ukeord") {
-        correctAnswer =
-            questions[currentQuestion].toLowerCase();
+        correctAnswer = questions[currentQuestion].toLowerCase();
     } else {
-        correctAnswer =
-            questions[currentQuestion].en.toLowerCase();
+        correctAnswer = questions[currentQuestion].en.toLowerCase();
     }
 
-    const feedback =
-        document.getElementById("feedback");
+    const feedback = document.getElementById("feedback");
 
     if (answer === correctAnswer) {
-
         score++;
-
         document.getElementById("score").innerText = score;
 
         feedback.className = "correct";
         feedback.innerHTML = "✅ Riktig!";
-
     } else {
-
         feedback.className = "wrong";
         feedback.innerHTML =
             `❌ Feil<br>Riktig svar: ${correctAnswer}`;
-
     }
 
     currentQuestion++;
 
     if (currentQuestion < questions.length) {
-
         setTimeout(() => {
             showQuestion();
         }, 1500);
-
     } else {
-
         setTimeout(() => {
             showResult();
         }, 1500);
@@ -117,28 +101,25 @@ function checkAnswer() {
 }
 
 function showResult() {
-
     let max = questions.length;
 
-    document.getElementById("question").innerHTML =
-        `🏆 Ferdig!`;
+    document.getElementById("question").innerHTML = "🏆 Ferdig!";
 
     document.getElementById("feedback").innerHTML =
         `Du fikk ${score} av ${max} poeng!`;
 
-    document.getElementById("progress").innerHTML =
-        "Fullført";
+    document.getElementById("progress").innerHTML = "Fullført";
 
     if (score === max) {
-
         document.getElementById("feedback").innerHTML +=
             "<br><br>🎉 Fantastisk! 🎉";
     }
 }
 
-document
-    .getElementById("checkBtn")
-    .addEventListener("click", checkAnswer);
+document.getElementById("checkBtn").addEventListener("click", checkAnswer);
 
-document
-    .getElementById("
+document.getElementById("answer").addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+        checkAnswer();
+    }
+});
