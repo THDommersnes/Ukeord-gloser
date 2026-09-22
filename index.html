@@ -23,42 +23,44 @@
                 <button class="game-mode mode-glossary" data-mode="gloser" type="button"><span class="button-icon">🌍</span><span>Gloser</span><small>Oversett ordet</small></button>
             </div>
         </section>
+
         <section class="custom-section" id="customWords">
             <h2>🧰 Lag din egen øving</h2>
-            <p class="helper-text">Lim inn alle ordene i ett felt – ett ord per linje. Skriv gloser som <code>hund - dog</code>. Sammenfeltet brukes når det inneholder tekst.</p>
+            <p class="helper-text">Skriv inn alle ordene i ett felt. Ett ord per linje. Gloser skal skrives som <code>hund - dog</code>.</p>
+
             <div class="custom-column combined-column">
                 <label for="customCombinedInput">Alle ordene 📋</label>
                 <textarea id="customCombinedInput" placeholder="sjokolade
 kjøkken
 hund - dog
-katt - cat" aria-describedby="combinedHelp"></textarea>
-                <small id="combinedHelp" class="field-help">Vanlige ord blir ukeord. Linjer med bindestrek, kolon eller komma blir gloser.</small>
+katt - cat"></textarea>
             </div>
-            <p class="helper-text">Du kan også bruke de separate feltene under dersom du vil holde ukeord og gloser adskilt.</p>
-            <div class="custom-grid">
-                <div class="custom-column"><label for="customUkeordInput">Ukeord ✏️</label><textarea id="customUkeordInput" placeholder="sjokolade
-kjøkken
-familie"></textarea></div>
-                <div class="custom-column"><label for="customGloserInput">Gloser – norsk - engelsk 🌍</label><textarea id="customGloserInput" placeholder="hund - dog
-katt - cat
-hus - house" aria-describedby="gloserHelp"></textarea><small id="gloserHelp" class="field-help">Én gloselinje per rad, for eksempel <code>hund - dog</code>.</small></div>
-            </div>
+
             <div class="custom-actions">
                 <button id="saveCustomBtn" type="button">💾 Lagre egne ord</button>
             </div>
             <p id="customStatus" class="custom-status" aria-live="polite"></p>
         </section>
-        <div class="toggle-actions"><button id="toggleWordsBtn" type="button" class="toggle-button" aria-pressed="false" aria-label="Skjul egne ord">🙈 Skjul egne ord</button></div>
+
+        <div class="toggle-actions">
+            <button id="toggleWordsBtn" type="button" class="toggle-button" aria-pressed="false" aria-label="Skjul egne ord">🙈 Skjul egne ord</button>
+        </div>
+
         <section id="game" class="hidden" aria-live="polite">
-            <div class="game-topbar"><div class="score-pill">⭐ <span id="score">0</span> poeng</div><div class="progress-pill">🏁 <span id="progress"></span></div></div>
+            <div class="game-topbar">
+                <div class="score-pill">⭐ <span id="score">0</span> poeng</div>
+                <div class="progress-pill">🏁 <span id="progress"></span></div>
+            </div>
             <div class="progress-track"><span id="progressBar"></span></div>
             <div class="question-box"><span class="thinking-emoji" aria-hidden="true">🎯</span><h2 id="question"></h2></div>
             <button id="replayAudioBtn" class="replay-button hidden" type="button">🔊 Spill av ordet på nytt</button>
+
             <form id="answerForm">
                 <label class="answer-label" for="answer">Skriv svaret ditt her:</label>
                 <input type="text" id="answer" placeholder="Trykk her og skriv ✨" autocomplete="off" enterkeyhint="done" required>
                 <button id="checkBtn" type="submit">Sjekk svaret 🚀</button>
             </form>
+
             <div id="feedback" aria-live="assertive"></div>
             <button id="readEnglishBtn" class="replay-button hidden" type="button" aria-label="Spill av det engelske ordet">🔊 Spill av engelsk ord</button>
             <button id="restartBtn" class="replay-button hidden" type="button">🔁 Spill på nytt</button>
