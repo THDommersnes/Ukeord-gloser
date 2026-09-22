@@ -17,7 +17,7 @@
         <button onclick="startGame('gloser')">Gloser</button>
     </div>
 
-    <div class="custom-section" id="customWords">
+    <div class="custom-controls">
         <button
             id="toggleWordsBtn"
             type="button"
@@ -25,7 +25,9 @@
             aria-pressed="false">
             Skjul egne ord
         </button>
+    </div>
 
+    <div class="custom-section" id="customWords">
         <h3>Legg til egne ord</h3>
 
         <div class="custom-grid">
@@ -57,6 +59,9 @@ hus - house"></textarea>
         <div class="custom-actions">
             <button id="saveCustomBtn" type="button">
                 Lagre egne ord
+            </button>
+            <button id="resetCustomBtn" type="button" class="secondary">
+                Tilbakestill standardord
             </button>
         </div>
 
