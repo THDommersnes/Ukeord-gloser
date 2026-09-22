@@ -62,112 +62,6 @@ function saveCustomLists() {
     setCustomStatus("Dine egne ord er lagret.");
 }
 
-function cleanOCRWord(value) { return String(value || "").replace(/[^\p{L}\s'-]/gu, "").replace(/\s+/g, " ").trim(); }
-function ignoredOCRWord(value) {
-    return /^(norsk|english|norwegian|ukeord|gloser|weekly|words|timeplan|lekse|step|read|pupil|usually|mate|chat|because|elev|vanligvis|kompis|prate|fordi)$/i.test(value);
-}
-function isLessonPlanText(value) {
-    const text = String(value || "").toLowerCase();
-    return /(lekseplan|leseplan|timeplan|lese til|lekse til|step\s*\d|read\s*p\.|read\s*s\.|p\.\s*\d+|s\.\s*\d+|torsdag|fredag|mandag|tirsdag|onsdag|bokslukerprisen|boks|\blese\b)/i.test(text);
-}
-function unique(values) { return [...new Map(values.map(x => [x.toLowerCase(), x])).values()]; }
-
-function parseOCRTable(data) {
-    const words = (data && data.words ? data.words : []).map(word => {
-        const box = word.bbox || {};
-        const height = Math.max(1, (box.bottom || 0) - (box.top || 0));
-        return {
-            text: cleanOCRWord(word.text),
-            left: box.left || 0,
-            right: box.right || box.left || 0,
-            top: box.top || 0,
-            bottom: box.bottom || (box.top || 0) + height,
-            center: ((box.left || 0) + (box.right || box.left || 0)) / 2,
-            height
-        };
-    }).filter(word => word.text && !ignoredOCRWord(word.text));
-
-    if (!words.length) return { ukeord: [], gloser: [] };
-
-    const typicalHeight = words.slice().sort((a, b) => a.height - b.height)[Math.floor(words.length / 2)]?.height || 20;
-    const rowTolerance = Math.max(22, typicalHeight * 0.75);
-    const rows = [];
-    words.sort((a, b) => a.top - b.top || a.left - b.left).forEach(word => {
-        let row = rows.find(item => Math.abs(item.centerTop - word.top) <= rowTolerance);
-        if (!row) {
-            row = { centerTop: word.top, words: [] };
-            rows.push(row);
-        }
-        row.words.push(word);
-        row.centerTop = row.words.reduce((sum, item) => sum + item.top, 0) / row.words.length;
-    });
-
-    const ukeord = [], gloser = [];
-    rows.sort((a, b) => a.centerTop - b.centerTop).forEach(row => {
-        const sorted = row.words.sort((a, b) => a.left - b.left);
-        if (sorted.length < 2) return;
-
-        const rowText = sorted.map(x => x.text).join(" ");
-        if (!rowText || isLessonPlanText(rowText)) return;
-
-        if (sorted.length >= 3) {
-            const [first, second, third] = sorted;
-            if (first.text.length >= 2 && second.text.length >= 2 && third.text.length >= 2) {
-                if (isLessonPlanText(`${first.text} ${second.text} ${third.text}`)) return;
-                ukeord.push(first.text);
-                gloser.push({ no: third.text, en: second.text });
-                return;
-            }
-        }
-
-        let split = 1;
-        let largestGap = -1;
-        for (let i = 1; i < sorted.length; i++) {
-            const gap = sorted[i].left - sorted[i - 1].right;
-            if (gap > largestGap) { largestGap = gap; split = i; }
-        }
-        const left = sorted.slice(0, split).map(x => x.text).join(" ").trim();
-        const right = sorted.slice(split).map(x => x.text).join(" ").trim();
-        if (left.length < 2 || right.length < 2) return;
-        if (isLessonPlanText(`${left} ${right}`)) return;
-        if (/^(weekly words|english norwegian|teased erta|words)$/i.test(`${left} ${right}`)) return;
-
-        gloser.push({ no: right, en: left });
-    });
-
-    return {
-        ukeord: unique(ukeord),
-        gloser: gloser.filter((entry, i, list) => list.findIndex(x => x.no.toLowerCase() === entry.no.toLowerCase() && x.en.toLowerCase() === entry.en.toLowerCase()) === i)
-    };
-}
-
-function mergeImported(imported) {
-    const u = document.getElementById("customUkeordInput"), g = document.getElementById("customGloserInput");
-    const ukeord = unique([...parseUkeordInput(u.value), ...(imported?.ukeord || [])]);
-    const gloser = [...parseGloserInput(g.value), ...(imported?.gloser || [])].filter((entry, i, list) => list.findIndex(x => x.no.toLowerCase() === entry.no.toLowerCase() && x.en.toLowerCase() === entry.en.toLowerCase()) === i);
-    u.value = ukeord.join("\n");
-    g.value = gloser.map(x => `${x.no} - ${x.en}`).join("\n");
-}
-
-async function handleImageUpload(event) {
-    const file = event.target.files && event.target.files[0];
-    if (!file) return;
-    if (!window.Tesseract) { setCustomStatus("OCR-biblioteket ble ikke lastet. Last siden på nytt.", true); return; }
-    setCustomStatus("Leser ordlisten i bildet...");
-    try {
-        const result = await Tesseract.recognize(file, "nor+eng", {
-            logger: m => { if (m.status === "recognizing text") setCustomStatus(`Leser ordlisten i bildet... ${Math.round((m.progress || 0) * 100)}%`); }
-        });
-        const imported = parseOCRTable(result.data);
-        if (!imported.ukeord.length && !imported.gloser.length) throw new Error("Ingen ord funnet i bildet");
-        mergeImported(imported);
-        setCustomStatus(`Importert ${imported.ukeord.length} ukeord og ${imported.gloser.length} gloser.`);
-    } catch (error) {
-        console.error(error);
-        setCustomStatus("Fant ikke ordlisten. Prøv et skarpere bilde med hele tabellen synlig.", true);
-    } finally { event.target.value = ""; }
-}
-
 function startGame(mode) {
     selectedMode = mode; score = 0; currentQuestion = 0; answerLocked = false;
     questions = shuffle(mode === "ukeord" ? getUkeordList() : getGloserList());
@@ -213,9 +107,6 @@ function initApp() {
     document.getElementById("checkBtn").addEventListener("click", checkAnswer);
     document.getElementById("answer").addEventListener("keydown", e => { if (e.key === "Enter") checkAnswer(); });
     document.getElementById("saveCustomBtn").addEventListener("click", saveCustomLists);
-    document.getElementById("importImageBtn").addEventListener("click", () => document.getElementById("imageUploadInput").click());
-    document.getElementById("imageUploadInput").addEventListener("change", handleImageUpload);
-    document.getElementById("replayAudioBtn").addEventListener("click", () => { if (selectedMode === "ukeord") speakText(questions[currentQuestion]); });
     document.getElementById("toggleWordsBtn").addEventListener("click", () => setCustomWordsHidden(!document.getElementById("customWords").classList.contains("words-hidden")));
     document.getElementById("readEnglishBtn")?.addEventListener("click", () => { const item = questions[currentQuestion]; if (item?.en) speakText(item.en, "en-US"); });
     loadCustomLists();
