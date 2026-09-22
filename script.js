@@ -26,7 +26,6 @@ function shuffle(array) {
 }
 
 function startGame(mode) {
-
     selectedMode = mode;
     score = 0;
     currentQuestion = 0;
@@ -142,10 +141,4 @@ document
     .addEventListener("click", checkAnswer);
 
 document
-    .getElementById("answer")
-    .addEventListener("keypress", function(e) {
-        if (e.key === "Enter") {
-            checkAnswer();
-        }
-    });
-``
+    .getElementById("
