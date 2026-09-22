@@ -13,19 +13,16 @@ function shuffle(array) {
 }
 
 function speakText(text, language = "nb-NO", cancel = true) {
-    if (!text || !("speechSynthesis" in window)) return;
-    if (cancel) speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = language;
-    u.rate = 0.9;
-    try { speechSynthesis.resume(); } catch (_) {}
-    speechSynthesis.speak(u);
-}
-
-function speakCorrectAnswer() {
-    const entry = questions[currentQuestion];
-    if (!entry) return;
-    speakText(selectedMode === "ukeord" ? entry : entry.en, selectedMode === "ukeord" ? "nb-NO" : "en-US");
+    if (!text || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return false;
+    const synth = window.speechSynthesis;
+    if (cancel) synth.cancel();
+    const utterance = new SpeechSynthesisUtterance(String(text));
+    utterance.lang = language;
+    utterance.rate = 0.9;
+    utterance.volume = 1;
+    try { synth.resume(); } catch (_) {}
+    synth.speak(utterance);
+    return true;
 }
 
 function parseUkeordInput(value) { return value.split(/\n+/).map(x => x.trim().replace(/^[-*•]\s*/, "")).filter(Boolean); }
@@ -78,15 +75,25 @@ function startGame(mode) {
     showQuestion();
 }
 function showQuestion() {
-    const input = document.getElementById("answer"), feedback = document.getElementById("feedback"), question = document.getElementById("question"), replay = document.getElementById("replayAudioBtn"), readEnglishBtn = document.getElementById("readEnglishBtn");
-    if (!input || !feedback || !question || !replay) return;
-    answerLocked = false; input.disabled = false; input.value = ""; input.focus(); feedback.textContent = "";
+    const input = document.getElementById("answer");
+    const feedback = document.getElementById("feedback");
+    const question = document.getElementById("question");
+    const replay = document.getElementById("replayAudioBtn");
+    const readEnglishBtn = document.getElementById("readEnglishBtn");
+    if (!input || !feedback || !question || !replay || !questions[currentQuestion]) return;
+
+    answerLocked = false;
+    input.disabled = false;
+    input.value = "";
+    input.focus();
+    feedback.textContent = "";
     readEnglishBtn?.classList.toggle("hidden", selectedMode !== "gloser");
     document.getElementById("progress").textContent = `${currentQuestion + 1} / ${questions.length}`;
     replay.classList.toggle("hidden", selectedMode !== "ukeord");
+
     if (selectedMode === "ukeord") {
         question.textContent = "🎧 Hør ordet og skriv det du hørte";
-        setTimeout(() => { if (!answerLocked) speakText(questions[currentQuestion]); }, 500);
+        setTimeout(() => { if (!answerLocked && questions[currentQuestion]) speakText(questions[currentQuestion]); }, 500);
     } else {
         question.innerHTML = `Hva er engelsk for:<br><br><b>${questions[currentQuestion].no}</b>`;
         if (readEnglishBtn) readEnglishBtn.title = `Les engelsk ord: ${questions[currentQuestion].en}`;
@@ -94,20 +101,31 @@ function showQuestion() {
 }
 function checkAnswer() {
     if (answerLocked) return;
-    const input = document.getElementById("answer"), feedback = document.getElementById("feedback"), entry = questions[currentQuestion];
+    const input = document.getElementById("answer");
+    const feedback = document.getElementById("feedback");
+    const entry = questions[currentQuestion];
+    if (!entry) return;
+
+    const correctAnswer = selectedMode === "ukeord" ? entry : entry.en;
+    const correct = input.value.trim().toLocaleLowerCase() === correctAnswer.toLocaleLowerCase();
     answerLocked = true;
-    const correct = input.value.trim().toLowerCase() === (selectedMode === "ukeord" ? entry.toLowerCase() : entry.en.toLowerCase());
+
     if (correct) {
         score++;
         document.getElementById("score").textContent = score;
         feedback.className = "correct";
         feedback.textContent = "Riktig!";
-        speakCorrectAnswer();
+
+        // Keep a copy before advancing, otherwise the next question can be spoken.
+        // This is called directly from the button/Enter action for mobile browsers.
+        speakText(correctAnswer, selectedMode === "ukeord" ? "nb-NO" : "en-US");
+
         currentQuestion++;
-        setTimeout(() => currentQuestion < questions.length ? showQuestion() : showResult(), 1200);
+        // Give the correct answer time to finish before the next question is read.
+        setTimeout(() => currentQuestion < questions.length ? showQuestion() : showResult(), 1800);
     } else {
         feedback.className = "wrong";
-        feedback.textContent = `Prøv igjen! Det riktige svaret er ${entry.en}.`;
+        feedback.textContent = `Prøv igjen! Det riktige svaret er ${entry.en || entry}.`;
         input.select();
         document.getElementById("readEnglishBtn")?.classList.toggle("hidden", selectedMode !== "gloser");
         answerLocked = false;
@@ -125,6 +143,9 @@ function initApp() {
     document.getElementById("answer").addEventListener("keydown", e => { if (e.key === "Enter") checkAnswer(); });
     document.getElementById("saveCustomBtn").addEventListener("click", saveCustomLists);
     document.getElementById("toggleWordsBtn").addEventListener("click", () => setCustomWordsHidden(!document.getElementById("customWords").classList.contains("words-hidden")));
+    document.getElementById("replayAudioBtn")?.addEventListener("click", () => {
+        if (selectedMode === "ukeord" && questions[currentQuestion]) speakText(questions[currentQuestion]);
+    });
     document.getElementById("readEnglishBtn")?.addEventListener("click", () => {
         const item = questions[currentQuestion];
         if (selectedMode === "gloser" && item?.en) speakText(item.en, "en-US");
