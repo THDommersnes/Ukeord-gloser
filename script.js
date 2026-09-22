@@ -92,6 +92,21 @@ function setCustomStatus(message, isError = false) {
     status.style.color = isError ? "#b42318" : "#006b3c";
 }
 
+function setCustomWordsHidden(hidden) {
+    const customWords = document.getElementById("customWords");
+    const toggleWordsBtn = document.getElementById("toggleWordsBtn");
+
+    if (!customWords || !toggleWordsBtn) return;
+
+    customWords.classList.toggle("words-hidden", hidden);
+    toggleWordsBtn.textContent = hidden ? "Vis egne ord" : "Skjul egne ord";
+    toggleWordsBtn.setAttribute("aria-pressed", String(hidden));
+    toggleWordsBtn.setAttribute(
+        "aria-label",
+        hidden ? "Vis egne ord" : "Skjul egne ord"
+    );
+}
+
 function loadCustomLists() {
     const customUkeordInput = document.getElementById("customUkeordInput");
     const customGloserInput = document.getElementById("customGloserInput");
@@ -179,6 +194,8 @@ function startGame(mode) {
         scoreLabel.innerText = score;
     }
 
+    // Skjul ordene automatisk når øvingen starter, slik at de ikke frister.
+    setCustomWordsHidden(true);
     gameBox.classList.remove("hidden");
 
     showQuestion();
@@ -273,6 +290,7 @@ function initApp() {
     const answerInput = document.getElementById("answer");
     const saveCustomBtn = document.getElementById("saveCustomBtn");
     const resetCustomBtn = document.getElementById("resetCustomBtn");
+    const toggleWordsBtn = document.getElementById("toggleWordsBtn");
 
     if (checkBtn) {
         checkBtn.addEventListener("click", checkAnswer);
@@ -292,6 +310,14 @@ function initApp() {
 
     if (resetCustomBtn) {
         resetCustomBtn.addEventListener("click", resetCustomLists);
+    }
+
+    if (toggleWordsBtn) {
+        toggleWordsBtn.addEventListener("click", function () {
+            const customWords = document.getElementById("customWords");
+            const isHidden = customWords && customWords.classList.contains("words-hidden");
+            setCustomWordsHidden(!isHidden);
+        });
     }
 
     loadCustomLists();
