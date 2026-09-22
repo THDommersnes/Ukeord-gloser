@@ -18,7 +18,6 @@ h1 {
 .mode-selector button,
 #checkBtn,
 #saveCustomBtn,
-#resetCustomBtn,
 .toggle-button {
     background: #0078d7;
     color: white;
@@ -33,17 +32,8 @@ h1 {
 .mode-selector button:hover,
 #checkBtn:hover,
 #saveCustomBtn:hover,
-#resetCustomBtn:hover,
 .toggle-button:hover {
     background: #005fa3;
-}
-
-.secondary {
-    background: #6c757d !important;
-}
-
-.secondary:hover {
-    background: #5a6268 !important;
 }
 
 .custom-section {

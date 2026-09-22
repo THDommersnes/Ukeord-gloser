@@ -17,16 +17,6 @@
         <button onclick="startGame('gloser')">Gloser</button>
     </div>
 
-    <div class="custom-controls">
-        <button
-            id="toggleWordsBtn"
-            type="button"
-            class="toggle-button"
-            aria-pressed="false">
-            Skjul egne ord
-        </button>
-    </div>
-
     <div class="custom-section" id="customWords">
         <h3>Legg til egne ord</h3>
 
@@ -39,8 +29,8 @@
                 <textarea
                     id="customUkeordInput"
                     placeholder="sjokolade
-kjøkken
-familie"></textarea>
+ kjøkken
+ familie"></textarea>
             </div>
 
             <div class="custom-column">
@@ -51,8 +41,8 @@ familie"></textarea>
                 <textarea
                     id="customGloserInput"
                     placeholder="hund - dog
-katt - cat
-hus - house"></textarea>
+ katt - cat
+ hus - house"></textarea>
             </div>
         </div>
 
@@ -60,8 +50,13 @@ hus - house"></textarea>
             <button id="saveCustomBtn" type="button">
                 Lagre egne ord
             </button>
-            <button id="resetCustomBtn" type="button" class="secondary">
-                Tilbakestill standardord
+            <button
+                id="toggleWordsBtn"
+                type="button"
+                class="toggle-button"
+                aria-pressed="false"
+                aria-label="Skjul egne ord">
+                Skjul egne ord
             </button>
         </div>
 

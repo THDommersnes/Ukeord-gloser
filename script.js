@@ -185,29 +185,6 @@ function saveCustomLists() {
     setCustomStatus("Dine egne ord er lagret.");
 }
 
-function resetCustomLists() {
-    const customUkeordInput =
-        document.getElementById("customUkeordInput");
-
-    const customGloserInput =
-        document.getElementById("customGloserInput");
-
-    if (!customUkeordInput || !customGloserInput) {
-        return;
-    }
-
-    localStorage.removeItem(customStorageKeys.ukeord);
-    localStorage.removeItem(customStorageKeys.gloser);
-
-    customUkeordInput.value = defaultUkeord.join("\n");
-
-    customGloserInput.value = defaultGloser
-        .map((entry) => `${entry.no} - ${entry.en}`)
-        .join("\n");
-
-    setCustomStatus("Standardordene er tilbake.");
-}
-
 function startGame(mode) {
     selectedMode = mode;
     score = 0;
@@ -264,6 +241,7 @@ function showQuestion() {
     }
 
     answerInput.value = "";
+    answerInput.disabled = false;
     answerInput.focus();
 
     feedback.innerHTML = "";
@@ -382,8 +360,6 @@ function initApp() {
     const answerInput = document.getElementById("answer");
     const saveCustomBtn =
         document.getElementById("saveCustomBtn");
-    const resetCustomBtn =
-        document.getElementById("resetCustomBtn");
     const toggleWordsBtn =
         document.getElementById("toggleWordsBtn");
 
@@ -401,10 +377,6 @@ function initApp() {
 
     if (saveCustomBtn) {
         saveCustomBtn.addEventListener("click", saveCustomLists);
-    }
-
-    if (resetCustomBtn) {
-        resetCustomBtn.addEventListener("click", resetCustomLists);
     }
 
     if (toggleWordsBtn) {
