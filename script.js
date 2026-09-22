@@ -1,273 +1,79 @@
-const defaultUkeord = [
-    "sjokolade",
-    "kjøkken",
-    "familie",
-    "sykkel",
-    "håndkle",
-    "vennskap"
-];
-
-const defaultGloser = [
-    { no: "hund", en: "dog" },
-    { no: "katt", en: "cat" },
-    { no: "hus", en: "house" },
-    { no: "bil", en: "car" },
-    { no: "bok", en: "book" },
-    { no: "skole", en: "school" }
-];
-
-const customStorageKeys = { ukeord: "ukeordCustom", gloser: "gloserCustom" };
-const ENGLISH_AUDIO_DELAY = 450;
-
-let selectedMode = "";
-let questions = [];
-let currentQuestion = 0;
-let score = 0;
-let answerLocked = false;
-
-function shuffle(array) {
-    const shuffled = [...array];
-    for (let index = shuffled.length - 1; index > 0; index--) {
-        const randomIndex = Math.floor(Math.random() * (index + 1));
-        [shuffled[index], shuffled[randomIndex]] =
-            [shuffled[randomIndex], shuffled[index]];
-    }
-    return shuffled;
-}
-
-function speakText(text, language = "nb-NO", cancel = true) {
-    if (!text || !("speechSynthesis" in window)) return;
-    if (cancel) window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = language;
-    utterance.rate = 0.9;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-    window.speechSynthesis.speak(utterance);
-}
-
-function speakFeedback(isCorrect) {
-    speakText(isCorrect ? "Riktig!" : "Prøv igjen!", "nb-NO");
-}
-
-function speakEnglishAfterPause(word) {
-    window.setTimeout(() => speakText(word, "en-US", false), ENGLISH_AUDIO_DELAY);
-}
-
-function parseUkeordInput(rawInput) {
-    return rawInput.split(/\n+/).map((line) => line.trim()).filter(Boolean)
-        .map((line) => line.replace(/^[-*•]\s*/, "")).filter(Boolean);
-}
-
-function parseGloserInput(rawInput) {
-    return rawInput.split(/\n+/).map((line) => line.trim()).filter(Boolean)
-        .map((line) => line.replace(/^[-*•]\s*/, "")).filter(Boolean)
-        .map((line) => {
-            const match = line.match(/^(.+?)\s*(?:-|:|,)\s*(.+)$/);
-            if (!match) return null;
-            const no = match[1].trim();
-            const en = match[2].trim();
-            return no && en ? { no, en } : null;
-        }).filter(Boolean);
-}
-
-function getStoredList(key, fallback) {
-    try {
-        const stored = JSON.parse(localStorage.getItem(key) || "[]");
-        return Array.isArray(stored) ? stored : fallback;
-    } catch (error) {
-        return fallback;
-    }
-}
-
-function getUkeordList() {
-    const custom = getStoredList(customStorageKeys.ukeord, []);
-    return custom.length > 0 ? custom : defaultUkeord;
-}
-
-function getGloserList() {
-    const custom = getStoredList(customStorageKeys.gloser, []);
-    return custom.length > 0 ? custom : defaultGloser;
-}
-
-function setCustomStatus(message, isError = false) {
-    const status = document.getElementById("customStatus");
-    if (!status) return;
-    status.textContent = message;
-    status.style.color = isError ? "#b42318" : "#006b3c";
-}
-
-function setCustomWordsHidden(hidden) {
-    const customWords = document.getElementById("customWords");
-    const toggleWordsBtn = document.getElementById("toggleWordsBtn");
-    if (!customWords || !toggleWordsBtn) return;
-
-    customWords.classList.toggle("words-hidden", hidden);
-    toggleWordsBtn.textContent = hidden ? "Vis egne ord" : "🙈 Skjul egne ord";
-    toggleWordsBtn.setAttribute("aria-pressed", String(hidden));
-    toggleWordsBtn.setAttribute("aria-label", hidden ? "Vis egne ord" : "Skjul egne ord");
-}
-
-function loadCustomLists() {
-    const customUkeordInput = document.getElementById("customUkeordInput");
-    const customGloserInput = document.getElementById("customGloserInput");
-    if (!customUkeordInput || !customGloserInput) return;
-
-    const customUkeord = getStoredList(customStorageKeys.ukeord, defaultUkeord);
-    const customGloser = getStoredList(customStorageKeys.gloser, defaultGloser);
-    customUkeordInput.value = customUkeord.join("\n");
-    customGloserInput.value = customGloser.map((entry) => `${entry.no} - ${entry.en}`).join("\n");
-}
-
-function saveCustomLists() {
-    const customUkeordInput = document.getElementById("customUkeordInput");
-    const customGloserInput = document.getElementById("customGloserInput");
-    if (!customUkeordInput || !customGloserInput) return;
-
-    const customUkeord = parseUkeordInput(customUkeordInput.value);
-    const customGloser = parseGloserInput(customGloserInput.value);
-
-    if (customUkeord.length > 0) localStorage.setItem(customStorageKeys.ukeord, JSON.stringify(customUkeord));
-    else localStorage.removeItem(customStorageKeys.ukeord);
-    if (customGloser.length > 0) localStorage.setItem(customStorageKeys.gloser, JSON.stringify(customGloser));
-    else localStorage.removeItem(customStorageKeys.gloser);
-    setCustomStatus("Dine egne ord er lagret.");
-}
-
-function startGame(mode) {
-    selectedMode = mode;
-    score = 0;
-    currentQuestion = 0;
-    answerLocked = false;
-
-    const gameBox = document.getElementById("game");
-    if (!gameBox) return;
-
-    questions = mode === "ukeord" ? shuffle(getUkeordList()) : shuffle(getGloserList());
-    if (questions.length === 0) questions = mode === "ukeord" ? [...defaultUkeord] : [...defaultGloser];
-
-    const scoreLabel = document.getElementById("score");
-    if (scoreLabel) scoreLabel.innerText = score;
-    setCustomWordsHidden(true);
-    gameBox.classList.remove("hidden");
-    showQuestion();
-}
-
-function showQuestion() {
-    const answerInput = document.getElementById("answer");
-    const feedback = document.getElementById("feedback");
-    const progress = document.getElementById("progress");
-    const question = document.getElementById("question");
-    const checkBtn = document.getElementById("checkBtn");
-    const replayAudioBtn = document.getElementById("replayAudioBtn");
-    if (!answerInput || !feedback || !progress || !question) return;
-
-    answerLocked = false;
-    if (checkBtn) checkBtn.disabled = false;
-    if (replayAudioBtn) {
-        replayAudioBtn.classList.toggle("hidden", selectedMode !== "ukeord");
-        replayAudioBtn.disabled = selectedMode !== "ukeord";
-    }
-
-    answerInput.value = "";
-    answerInput.disabled = false;
-    answerInput.focus();
-    answerInput.placeholder = selectedMode === "ukeord" ? "Skriv ordet du hørte" : "Trykk her og skriv ✨";
-    feedback.innerHTML = "";
-    feedback.className = "";
-    progress.innerText = `${currentQuestion + 1} / ${questions.length}`;
-
-    if (selectedMode === "ukeord") {
-        question.innerHTML = "🎧 Hør ordet og skriv det du hørte";
-        window.setTimeout(() => {
-            if (!answerLocked && questions[currentQuestion]) speakText(questions[currentQuestion]);
-        }, 500);
-    } else {
-        question.innerHTML = "Hva er engelsk for:<br><br>" + `<b>${questions[currentQuestion].no}</b>`;
-    }
-}
-
-function checkAnswer() {
-    if (answerLocked) return;
-
-    const answerInput = document.getElementById("answer");
-    const feedback = document.getElementById("feedback");
-    const scoreLabel = document.getElementById("score");
-    const checkBtn = document.getElementById("checkBtn");
-    if (!answerInput || !feedback || !scoreLabel || questions.length === 0) return;
-
-    answerLocked = true;
-    if (checkBtn) checkBtn.disabled = true;
-
-    const answer = answerInput.value.trim().toLowerCase();
-    const currentEntry = questions[currentQuestion];
-    const correctAnswer = selectedMode === "ukeord" ? currentEntry.toLowerCase() : currentEntry.en.toLowerCase();
-    const isCorrect = answer === correctAnswer;
-
-    speakFeedback(isCorrect);
-    if (selectedMode === "gloser") speakEnglishAfterPause(currentEntry.en);
-
-    if (isCorrect) {
-        score++;
-        scoreLabel.innerText = score;
-        feedback.className = "correct";
-        feedback.innerHTML = "✅ Riktig!";
-        currentQuestion++;
-
-        if (currentQuestion < questions.length) window.setTimeout(showQuestion, 1500);
-        else window.setTimeout(showResult, 1500);
-    } else {
-        feedback.className = "wrong";
-        feedback.innerHTML = "🔁 Prøv igjen! Du klarer det – skriv svaret en gang til.";
-        answerLocked = false;
-        answerInput.disabled = false;
-        answerInput.select();
-        if (checkBtn) checkBtn.disabled = false;
-    }
-}
-
-function showResult() {
-    const question = document.getElementById("question");
-    const feedback = document.getElementById("feedback");
-    const progress = document.getElementById("progress");
-    const answerInput = document.getElementById("answer");
-    const checkBtn = document.getElementById("checkBtn");
-    const replayAudioBtn = document.getElementById("replayAudioBtn");
-    if (!question || !feedback || !progress) return;
-
-    const max = questions.length;
-    question.innerHTML = "🏆 Ferdig!";
-    feedback.className = "correct";
-    feedback.innerHTML = `Du fikk ${score} av ${max} poeng!`;
-    progress.innerHTML = "Fullført";
-    if (score === max) feedback.innerHTML += "<br><br>🎉 Fantastisk! 🎉";
-    if (answerInput) { answerInput.value = ""; answerInput.disabled = true; }
-    if (checkBtn) checkBtn.disabled = true;
-    if (replayAudioBtn) { replayAudioBtn.classList.add("hidden"); replayAudioBtn.disabled = true; }
-}
-
-function initApp() {
-    const checkBtn = document.getElementById("checkBtn");
-    const answerInput = document.getElementById("answer");
-    const replayAudioBtn = document.getElementById("replayAudioBtn");
-    const saveCustomBtn = document.getElementById("saveCustomBtn");
-    const toggleWordsBtn = document.getElementById("toggleWordsBtn");
-
-    if (checkBtn) checkBtn.addEventListener("click", checkAnswer);
-    if (answerInput) answerInput.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") checkAnswer();
-    });
-    if (replayAudioBtn) replayAudioBtn.addEventListener("click", () => {
-        if (selectedMode === "ukeord" && questions[currentQuestion]) speakText(questions[currentQuestion]);
-    });
-    if (saveCustomBtn) saveCustomBtn.addEventListener("click", saveCustomLists);
-    if (toggleWordsBtn) toggleWordsBtn.addEventListener("click", () => {
-        const customWords = document.getElementById("customWords");
-        const isHidden = customWords && customWords.classList.contains("words-hidden");
-        setCustomWordsHidden(!isHidden);
-    });
-    loadCustomLists();
-}
-
-document.addEventListener("DOMContentLoaded", initApp);
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0f9d58">
+    <title>Ukeord & Gloser</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="confetti" aria-hidden="true"></div>
+<div class="container">
+    <header class="app-header">
+        <p class="eyebrow">⚽ Fotballtrening</p>
+        <h1>🏆 Ukeord & Gloser</h1>
+        <p class="subtitle">Klar for kamp?</p>
+    </header>
+    <main>
+        <section class="start-card" aria-label="Velg spill">
+            <p class="section-kicker">Velg en øvelse</p>
+            <div class="mode-selector">
+                <button class="game-mode mode-words" onclick="startGame('ukeord')" type="button">
+                    <span class="button-icon">🎧</span><span>Ukeord</span><small>Hør og skriv</small>
+                </button>
+                <button class="game-mode mode-glossary" onclick="startGame('gloser')" type="button">
+                    <span class="button-icon">🌍</span><span>Gloser</span><small>Oversett ordet</small>
+                </button>
+            </div>
+        </section>
+        <section class="custom-section" id="customWords">
+            <h2>🧰 Lag din egen øving</h2>
+            <p class="helper-text">Skriv inn ord du vil øve på. Ett ord per linje!</p>
+            <div class="custom-grid">
+                <div class="custom-column">
+                    <label for="customUkeordInput">Ukeord ✏️</label>
+                    <textarea id="customUkeordInput" placeholder="sjokolade
+kjøkken
+familie"></textarea>
+                </div>
+                <div class="custom-column">
+                    <label for="customGloserInput">Gloser – norsk - engelsk 🌍</label>
+                    <textarea id="customGloserInput" placeholder="hund - dog
+katt - cat
+hus - house"></textarea>
+                </div>
+            </div>
+            <div class="custom-actions">
+                <button id="saveCustomBtn" type="button">💾 Lagre egne ord</button>
+                <button id="importImageBtn" class="secondary-btn" type="button">📷 Importer fra bilde</button>
+                <input id="imageUploadInput" type="file" accept="image/*" hidden>
+            </div>
+            <p id="customStatus" class="custom-status" aria-live="polite"></p>
+        </section>
+        <div class="toggle-actions">
+            <button id="toggleWordsBtn" type="button" class="toggle-button" aria-pressed="false" aria-label="Skjul egne ord">🙈 Skjul egne ord</button>
+        </div>
+        <section id="game" class="hidden" aria-live="polite">
+            <div class="game-topbar">
+                <div class="score-pill">⭐ <span id="score">0</span> poeng</div>
+                <div class="progress-pill">🏁 <span id="progress"></span></div>
+            </div>
+            <div class="progress-track"><span id="progressBar"></span></div>
+            <div class="question-box">
+                <span class="thinking-emoji" aria-hidden="true">🎯</span>
+                <h2 id="question"></h2>
+            </div>
+            <button id="replayAudioBtn" class="replay-button hidden" type="button">🔊 Spill av ordet på nytt</button>
+            <button id="replayEnglishAudioBtn" class="replay-button hidden" type="button">🔊 Spill av det engelske ordet på nytt</button>
+            <label class="answer-label" for="answer">Skriv svaret ditt her:</label>
+            <input type="text" id="answer" placeholder="Trykk her og skriv ✨" autocomplete="off" enterkeyhint="done">
+            <button id="checkBtn" type="button">Sjekk svaret 🚀</button>
+            <div id="feedback" role="status"></div>
+        </section>
+    </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
