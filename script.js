@@ -158,6 +158,11 @@ function startGame(mode) {
     selectedMode = mode;
     score = 0;
     currentQuestion = 0;
+    const gameBox = document.getElementById("game");
+
+    if (!gameBox) {
+        return;
+    }
 
     if (mode === "ukeord") {
         questions = shuffle([...getUkeordList()]);
@@ -169,35 +174,48 @@ function startGame(mode) {
         questions = mode === "ukeord" ? [...defaultUkeord] : [...defaultGloser];
     }
 
-    document.getElementById("score").innerText = score;
-    document.getElementById("game").classList.remove("hidden");
+    const scoreLabel = document.getElementById("score");
+    if (scoreLabel) {
+        scoreLabel.innerText = score;
+    }
+
+    gameBox.classList.remove("hidden");
 
     showQuestion();
 }
 
 function showQuestion() {
-    document.getElementById("answer").value = "";
-    document.getElementById("feedback").innerHTML = "";
+    const answerInput = document.getElementById("answer");
+    const feedback = document.getElementById("feedback");
+    const progress = document.getElementById("progress");
+    const question = document.getElementById("question");
 
-    document.getElementById("progress").innerText =
-        `${currentQuestion + 1} / ${questions.length}`;
+    if (!answerInput || !feedback || !progress || !question) {
+        return;
+    }
+
+    answerInput.value = "";
+    feedback.innerHTML = "";
+
+    progress.innerText = `${currentQuestion + 1} / ${questions.length}`;
 
     if (selectedMode === "ukeord") {
-        document.getElementById("question").innerHTML =
-            `Skriv ordet:<br><br><b>${questions[currentQuestion]}</b>`;
+        question.innerHTML = `Skriv ordet:<br><br><b>${questions[currentQuestion]}</b>`;
     } else {
-        document.getElementById("question").innerHTML =
-            `Hva er engelsk for:<br><br><b>${questions[currentQuestion].no}</b>`;
+        question.innerHTML = `Hva er engelsk for:<br><br><b>${questions[currentQuestion].no}</b>`;
     }
 }
 
 function checkAnswer() {
-    let answer =
-        document.getElementById("answer")
-            .value
-            .trim()
-            .toLowerCase();
+    const answerInput = document.getElementById("answer");
+    const feedback = document.getElementById("feedback");
+    const scoreLabel = document.getElementById("score");
 
+    if (!answerInput || !feedback || !scoreLabel || questions.length === 0) {
+        return;
+    }
+
+    let answer = answerInput.value.trim().toLowerCase();
     let correctAnswer;
 
     if (selectedMode === "ukeord") {
@@ -206,11 +224,9 @@ function checkAnswer() {
         correctAnswer = questions[currentQuestion].en.toLowerCase();
     }
 
-    const feedback = document.getElementById("feedback");
-
     if (answer === correctAnswer) {
         score++;
-        document.getElementById("score").innerText = score;
+        scoreLabel.innerText = score;
 
         feedback.className = "correct";
         feedback.innerHTML = "✅ Riktig!";
@@ -233,30 +249,52 @@ function checkAnswer() {
 }
 
 function showResult() {
+    const question = document.getElementById("question");
+    const feedback = document.getElementById("feedback");
+    const progress = document.getElementById("progress");
+
+    if (!question || !feedback || !progress) {
+        return;
+    }
+
     let max = questions.length;
 
-    document.getElementById("question").innerHTML = "🏆 Ferdig!";
-
-    document.getElementById("feedback").innerHTML =
-        `Du fikk ${score} av ${max} poeng!`;
-
-    document.getElementById("progress").innerHTML = "Fullført";
+    question.innerHTML = "🏆 Ferdig!";
+    feedback.innerHTML = `Du fikk ${score} av ${max} poeng!`;
+    progress.innerHTML = "Fullført";
 
     if (score === max) {
-        document.getElementById("feedback").innerHTML +=
-            "<br><br>🎉 Fantastisk! 🎉";
+        feedback.innerHTML += "<br><br>🎉 Fantastisk! 🎉";
     }
 }
 
-document.getElementById("checkBtn").addEventListener("click", checkAnswer);
+function initApp() {
+    const checkBtn = document.getElementById("checkBtn");
+    const answerInput = document.getElementById("answer");
+    const saveCustomBtn = document.getElementById("saveCustomBtn");
+    const resetCustomBtn = document.getElementById("resetCustomBtn");
 
-document.getElementById("answer").addEventListener("keydown", function (event) {
-    if (event.key === "Enter") {
-        checkAnswer();
+    if (checkBtn) {
+        checkBtn.addEventListener("click", checkAnswer);
     }
-});
 
-document.getElementById("saveCustomBtn").addEventListener("click", saveCustomLists);
-document.getElementById("resetCustomBtn").addEventListener("click", resetCustomLists);
+    if (answerInput) {
+        answerInput.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                checkAnswer();
+            }
+        });
+    }
 
-loadCustomLists();
+    if (saveCustomBtn) {
+        saveCustomBtn.addEventListener("click", saveCustomLists);
+    }
+
+    if (resetCustomBtn) {
+        resetCustomBtn.addEventListener("click", resetCustomLists);
+    }
+
+    loadCustomLists();
+}
+
+document.addEventListener("DOMContentLoaded", initApp);
