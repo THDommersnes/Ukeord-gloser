@@ -67,6 +67,10 @@ function cleanOCRWord(value) { return String(value || "").replace(/[^\p{L}\s'-]/
 function ignoredOCRWord(value) {
     return /^(norsk|english|norwegian|ukeord|gloser|weekly|words|timeplan|lekse|step|read|pupil|usually|mate|chat|because|elev|vanligvis|kompis|prate|fordi)$/i.test(value);
 }
+function isLessonPlanText(value) {
+    const text = String(value || "").toLowerCase();
+    return /(lekseplan|leseplan|timeplan|lese til|lekse til|step\s*\d|read\s*p\.|read\s*s\.|p\.\s*\d+|s\.\s*\d+|torsdag|fredag|mandag|tirsdag|onsdag|bokslukerprisen|boks|\blese\b)/i.test(text);
+}
 function unique(values) { return [...new Map(values.map(x => [x.toLowerCase(), x])).values()]; }
 
 // Reads both the old three-column layout and a two-column "Weekly words" layout.
@@ -89,7 +93,6 @@ function parseOCRTable(data) {
 
     if (!words.length) return { ukeord: [], gloser: [] };
 
-    // Use a scale-aware tolerance. A fixed 22px tolerance fails on phone screenshots.
     const typicalHeight = words.slice().sort((a, b) => a.height - b.height)[Math.floor(words.length / 2)]?.height || 20;
     const rowTolerance = Math.max(22, typicalHeight * 0.75);
     const rows = [];
@@ -108,19 +111,19 @@ function parseOCRTable(data) {
         const sorted = row.words.sort((a, b) => a.left - b.left);
         if (sorted.length < 2) return;
 
-        // A three-column weekly table: first column is ukeord, second English,
-        // third Norwegian. Keep compatibility with that format.
+        const rowText = sorted.map(x => x.text).join(" ");
+        if (!rowText || isLessonPlanText(rowText)) return;
+
         if (sorted.length >= 3) {
             const [first, second, third] = sorted;
             if (first.text.length >= 2 && second.text.length >= 2 && third.text.length >= 2) {
+                if (isLessonPlanText(`${first.text} ${second.text} ${third.text}`)) return;
                 ukeord.push(first.text);
                 gloser.push({ no: third.text, en: second.text });
                 return;
             }
         }
 
-        // Two-column table: split at the largest horizontal gap. This also keeps
-        // phrases such as "Lunch break" together in the left cell.
         let split = 1;
         let largestGap = -1;
         for (let i = 1; i < sorted.length; i++) {
@@ -130,9 +133,9 @@ function parseOCRTable(data) {
         const left = sorted.slice(0, split).map(x => x.text).join(" ").trim();
         const right = sorted.slice(split).map(x => x.text).join(" ").trim();
         if (left.length < 2 || right.length < 2) return;
+        if (isLessonPlanText(`${left} ${right}`)) return;
         if (/^(weekly words|english norwegian|teased erta|words)$/i.test(`${left} ${right}`)) return;
 
-        // Weekly words are English on the left and Norwegian on the right.
         gloser.push({ no: right, en: left });
     });
 
@@ -179,6 +182,7 @@ function startGame(mode) {
 }
 function showQuestion() {
     const input = document.getElementById("answer"), feedback = document.getElementById("feedback"), question = document.getElementById("question"), replay = document.getElementById("replayAudioBtn");
+    if (!input || !feedback || !question || !replay) return;
     answerLocked = false; input.disabled = false; input.value = ""; input.focus(); feedback.textContent = "";
     document.getElementById("readEnglishBtn")?.classList.add("hidden");
     document.getElementById("progress").textContent = `${currentQuestion + 1} / ${questions.length}`;
@@ -222,3 +226,4 @@ function initApp() {
     loadCustomLists();
 }
 document.addEventListener("DOMContentLoaded", initApp);
+

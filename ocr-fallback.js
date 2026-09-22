@@ -7,6 +7,11 @@
         return entries.filter((entry, index, list) => list.findIndex(item => item.no.toLowerCase() === entry.no.toLowerCase() && item.en.toLowerCase() === entry.en.toLowerCase()) === index);
     }
 
+    function isLessonPlanText(value) {
+        const text = String(value || "").toLowerCase();
+        return /(lekseplan|leseplan|timeplan|lese til|lekse til|step\s*\d|read\s*p\.|read\s*s\.|p\.\s*\d+|s\.\s*\d+|torsdag|fredag|mandag|tirsdag|onsdag|bokslukerprisen|boks|\blese\b)/i.test(text);
+    }
+
     function parseLines(data) {
         const result = [];
         const lines = data && Array.isArray(data.lines) ? data.lines : [];
@@ -29,7 +34,9 @@
 
             const english = words.slice(0, split).map(word => word.text).join(" ");
             const norwegian = words.slice(split).map(word => word.text).join(" ");
-            if (english.length >= 2 && norwegian.length >= 2) result.push({ no: norwegian, en: english });
+            if (english.length < 2 || norwegian.length < 2) return;
+            if (isLessonPlanText(`${english} ${norwegian}`)) return;
+            result.push({ no: norwegian, en: english });
         });
 
         return uniqueEntries(result);
@@ -40,7 +47,8 @@
         const result = [];
         text.split(/\r?\n/).forEach(line => {
             const cleaned = line.replace(/Weekly\s+words:?/i, "").trim();
-            if (!cleaned || /^(teased|bullied|parents|lunch break|famous|erta|mobba|foreldre|matpause|berømt)$/i.test(cleaned)) return;
+            if (!cleaned || /^(teased|bullied|parents|lunch break|famous|erta|mobba|foreldre|matpause|berømt|weekly words|timeplan|norsk|english|norwegian)$/i.test(cleaned)) return;
+            if (isLessonPlanText(cleaned)) return;
 
             const parts = cleaned.split(/\t+|\s{3,}/).map(clean).filter(Boolean);
             if (parts.length >= 2) {
@@ -91,3 +99,4 @@
         }
     }, true);
 })();
+
