@@ -124,10 +124,12 @@ function checkAnswer() {
         // Give the correct answer time to finish before the next question is read.
         setTimeout(() => currentQuestion < questions.length ? showQuestion() : showResult(), 1800);
     } else {
+        const correctText = entry.en || entry;
         feedback.className = "wrong";
-        feedback.textContent = `Prøv igjen! Det riktige svaret er ${entry.en || entry}.`;
+        feedback.textContent = `Prøv igjen! Det riktige svaret er ${correctText}.`;
         input.select();
         document.getElementById("readEnglishBtn")?.classList.toggle("hidden", selectedMode !== "gloser");
+        speakText(correctText, selectedMode === "ukeord" ? "nb-NO" : "en-US");
         answerLocked = false;
     }
 }
