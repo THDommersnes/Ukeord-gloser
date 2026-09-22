@@ -1,6 +1,6 @@
 const defaultUkeord = ["sjokolade", "kjøkken", "familie", "sykkel", "håndkle", "vennskap"];
 const defaultGloser = [{ no: "hund", en: "dog" }, { no: "katt", en: "cat" }, { no: "hus", en: "house" }, { no: "bil", en: "car" }, { no: "bok", en: "book" }, { no: "skole", en: "school" }];
-const customStorageKeys = { ukeord: "ukeordCustom", gloser: "gloserCustom" };
+const customStorageKeys = { ukeord: "ukeordCustom", gloser: "gloserCustom", combined: "combinedCustom" };
 let selectedMode = "", questions = [], currentQuestion = 0, score = 0, answerLocked = false;
 
 function shuffle(array) {
@@ -10,6 +10,16 @@ function shuffle(array) {
         [result[i], result[j]] = [result[j], result[i]];
     }
     return result;
+}
+
+function normalizeText(value) {
+    return String(value ?? "").trim();
+}
+
+function normalizeAnswer(value) {
+    return normalizeText(value)
+        .toLocaleLowerCase("nb-NO")
+        .replace(/\s+/g, " ");
 }
 
 function speakText(text, language = "nb-NO", cancel = true) {
@@ -25,61 +35,202 @@ function speakText(text, language = "nb-NO", cancel = true) {
     return true;
 }
 
-function parseUkeordInput(value) { return value.split(/\n+/).map(x => x.trim().replace(/^[-*•]\s*/, "")).filter(Boolean); }
-function parseGloserInput(value) {
-    return value.split(/\n+/).map(x => x.trim().replace(/^[-*•]\s*/, "")).map(x => {
-        const m = x.match(/^(.+?)\s*(?:-|:|,)\s*(.+)$/);
-        return m ? { no: m[1].trim(), en: m[2].trim() } : null;
-    }).filter(Boolean);
+function parseUkeordInput(value) {
+    return normalizeText(value)
+        .split(/\n+/)
+        .map(line => line.trim().replace(/^[-*•]\s*/, ""))
+        .filter(Boolean);
 }
+
+function parseGloserInput(value) {
+    return normalizeText(value)
+        .split(/\n+/)
+        .map(line => line.trim().replace(/^[-*•]\s*/, ""))
+        .map(line => {
+            const match = line.match(/^(.+?)\s*(?:-|:|,)\s*(.+)$/);
+            return match ? { no: match[1].trim(), en: match[2].trim() } : null;
+        })
+        .filter(item => item && item.no && item.en);
+}
+
+function parseCombinedInput(value) {
+    const ukeord = [];
+    const gloser = [];
+    const invalid = [];
+
+    normalizeText(value)
+        .split(/\n+/)
+        .map(line => line.trim().replace(/^[-*•]\s*/, ""))
+        .filter(Boolean)
+        .forEach(line => {
+            const match = line.match(/^(.+?)\s*(?:-|:|,)\s*(.+)$/);
+            if (match) {
+                gloser.push({ no: match[1].trim(), en: match[2].trim() });
+                return;
+            }
+
+            const isLikelyGlossary = /\b(?:to|for|med|og)\b/i.test(line) || /\s+-\s+/.test(line);
+            if (isLikelyGlossary) {
+                invalid.push(line);
+                return;
+            }
+
+            ukeord.push(line);
+        });
+
+    return { ukeord: dedupeStrings(ukeord), gloser: dedupeGlossary(gloser), invalid };
+}
+
+function dedupeStrings(values) {
+    return [...new Set(values.map(value => normalizeText(value)).filter(Boolean))];
+}
+
+function dedupeGlossary(items) {
+    const seen = new Set();
+    const result = [];
+
+    items.forEach(item => {
+        if (!item || !item.no || !item.en) return;
+        const key = `${normalizeText(item.no).toLocaleLowerCase("nb-NO")}::${normalizeText(item.en).toLocaleLowerCase("en-US")}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        result.push({ no: normalizeText(item.no), en: normalizeText(item.en) });
+    });
+
+    return result;
+}
+
 function getStoredList(key, fallback) {
     try {
         const value = JSON.parse(localStorage.getItem(key) || "[]");
         return Array.isArray(value) ? value : fallback;
     } catch (_) { return fallback; }
 }
-function getUkeordList() { const x = getStoredList(customStorageKeys.ukeord, []); return x.length ? x : defaultUkeord; }
-function getGloserList() { const x = getStoredList(customStorageKeys.gloser, []); return x.length ? x : defaultGloser; }
+
+function setStoredValue(key, value) {
+    try {
+        if (value && value.length) {
+            localStorage.setItem(key, JSON.stringify(value));
+            return true;
+        }
+        localStorage.removeItem(key);
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+function getUkeordList() {
+    const stored = getStoredList(customStorageKeys.ukeord, []);
+    return stored.length ? stored : defaultUkeord;
+}
+
+function getGloserList() {
+    const stored = getStoredList(customStorageKeys.gloser, []);
+    return stored.length ? stored : defaultGloser;
+}
+
 function setCustomStatus(message, error = false) {
     const el = document.getElementById("customStatus");
-    if (el) { el.textContent = message; el.classList.toggle("status-error", error); }
+    if (el) {
+        el.textContent = message;
+        el.classList.toggle("status-error", error);
+    }
 }
+
 function setCustomWordsHidden(hidden) {
-    const section = document.getElementById("customWords"), button = document.getElementById("toggleWordsBtn");
+    const section = document.getElementById("customWords");
+    const button = document.getElementById("toggleWordsBtn");
     if (!section || !button) return;
     section.classList.toggle("words-hidden", hidden);
     button.textContent = hidden ? "🙉 Vis egne ord" : "🙈 Skjul egne ord";
     button.setAttribute("aria-pressed", String(hidden));
     button.setAttribute("aria-label", hidden ? "Vis egne ord" : "Skjul egne ord");
 }
+
 function loadCustomLists() {
-    const u = document.getElementById("customUkeordInput"), g = document.getElementById("customGloserInput");
-    if (!u || !g) return;
-    u.value = getStoredList(customStorageKeys.ukeord, defaultUkeord).join("\n");
-    g.value = getStoredList(customStorageKeys.gloser, defaultGloser).map(x => `${x.no} - ${x.en}`).join("\n");
+    const u = document.getElementById("customUkeordInput");
+    const g = document.getElementById("customGloserInput");
+    const c = document.getElementById("customCombinedInput");
+    if (!u || !g || !c) return;
+
+    const storedUkeord = getStoredList(customStorageKeys.ukeord, defaultUkeord);
+    const storedGloser = getStoredList(customStorageKeys.gloser, defaultGloser);
+
+    u.value = storedUkeord.join("\n");
+    g.value = storedGloser.map(item => `${item.no} - ${item.en}`).join("\n");
+
+    const combined = [
+        ...storedUkeord,
+        ...storedGloser.map(item => `${item.no} - ${item.en}`)
+    ];
+    c.value = combined.join("\n");
 }
+
 function saveCustomLists() {
-    const u = parseUkeordInput(document.getElementById("customUkeordInput").value);
-    const g = parseGloserInput(document.getElementById("customGloserInput").value);
-    if (u.length) localStorage.setItem(customStorageKeys.ukeord, JSON.stringify(u)); else localStorage.removeItem(customStorageKeys.ukeord);
-    if (g.length) localStorage.setItem(customStorageKeys.gloser, JSON.stringify(g)); else localStorage.removeItem(customStorageKeys.gloser);
-    setCustomStatus("Dine egne ord er lagret.");
+    const combinedInput = document.getElementById("customCombinedInput");
+    const ukeordInput = document.getElementById("customUkeordInput");
+    const gloserInput = document.getElementById("customGloserInput");
+
+    if (!combinedInput || !ukeordInput || !gloserInput) return;
+
+    const combined = parseCombinedInput(combinedInput.value);
+    const ukeord = dedupeStrings(parseUkeordInput(ukeordInput.value));
+    const gloser = dedupeGlossary(parseGloserInput(gloserInput.value));
+
+    const mergedUkeord = dedupeStrings([...combined.ukeord, ...ukeord]);
+    const mergedGloser = dedupeGlossary([...combined.gloser, ...gloser]);
+
+    const savedUkeord = setStoredValue(customStorageKeys.ukeord, mergedUkeord) ? mergedUkeord : [];
+    const savedGloser = setStoredValue(customStorageKeys.gloser, mergedGloser) ? mergedGloser : [];
+
+    const mergedCombined = [
+        ...savedUkeord,
+        ...savedGloser.map(item => `${item.no} - ${item.en}`)
+    ].join("\n");
+
+    combinedInput.value = mergedCombined;
+
+    if (!savedUkeord.length && !savedGloser.length) {
+        setCustomStatus("Ingen ord ble lagret. Skriv inn minst ett ord eller en gloseliste.", true);
+        return;
+    }
+
+    if (combined.invalid.length) {
+        setCustomStatus(`Dine egne ord er lagret. ${combined.invalid.length} linje(r) ble ignorert fordi de ikke hadde et gyldig format.`, false);
+    } else {
+        setCustomStatus("Dine egne ord er lagret.");
+    }
 }
 
 function startGame(mode) {
-    selectedMode = mode; score = 0; currentQuestion = 0; answerLocked = false;
-    questions = shuffle(mode === "ukeord" ? getUkeordList() : getGloserList());
+    if (!mode) return;
+
+    const list = mode === "ukeord" ? getUkeordList() : getGloserList();
+    if (!list.length) {
+        setCustomStatus("Det finnes ingen ord i denne listen ennå. Legg inn egne ord først.", true);
+        return;
+    }
+
+    selectedMode = mode;
+    score = 0;
+    currentQuestion = 0;
+    answerLocked = false;
+    questions = shuffle(list);
     document.getElementById("score").textContent = score;
     setCustomWordsHidden(true);
     document.getElementById("game").classList.remove("hidden");
     showQuestion();
 }
+
 function showQuestion() {
     const input = document.getElementById("answer");
     const feedback = document.getElementById("feedback");
     const question = document.getElementById("question");
     const replay = document.getElementById("replayAudioBtn");
     const readEnglishBtn = document.getElementById("readEnglishBtn");
+    const restartBtn = document.getElementById("restartBtn");
+
     if (!input || !feedback || !question || !replay || !questions[currentQuestion]) return;
 
     answerLocked = false;
@@ -87,27 +238,45 @@ function showQuestion() {
     input.value = "";
     input.focus();
     feedback.textContent = "";
+    feedback.className = "";
     readEnglishBtn?.classList.toggle("hidden", selectedMode !== "gloser");
+    restartBtn?.classList.add("hidden");
     document.getElementById("progress").textContent = `${currentQuestion + 1} / ${questions.length}`;
     replay.classList.toggle("hidden", selectedMode !== "ukeord");
 
+    question.textContent = "";
+
     if (selectedMode === "ukeord") {
         question.textContent = "🎧 Hør ordet og skriv det du hørte";
-        setTimeout(() => { if (!answerLocked && questions[currentQuestion]) speakText(questions[currentQuestion]); }, 500);
+        setTimeout(() => {
+            if (!answerLocked && questions[currentQuestion]) {
+                speakText(questions[currentQuestion]);
+            }
+        }, 500);
     } else {
-        question.innerHTML = `Hva er engelsk for:<br><br><b>${questions[currentQuestion].no}</b>`;
+        const prompt = document.createElement("div");
+        prompt.textContent = "Hva er engelsk for:";
+        const strong = document.createElement("strong");
+        strong.textContent = questions[currentQuestion].no;
+        question.appendChild(prompt);
+        question.appendChild(document.createElement("br"));
+        question.appendChild(document.createElement("br"));
+        question.appendChild(strong);
         if (readEnglishBtn) readEnglishBtn.title = `Les engelsk ord: ${questions[currentQuestion].en}`;
     }
 }
+
 function checkAnswer() {
     if (answerLocked) return;
+
     const input = document.getElementById("answer");
     const feedback = document.getElementById("feedback");
     const entry = questions[currentQuestion];
-    if (!entry) return;
+
+    if (!input || !feedback || !entry) return;
 
     const correctAnswer = selectedMode === "ukeord" ? entry : entry.en;
-    const correct = input.value.trim().toLocaleLowerCase() === correctAnswer.toLocaleLowerCase();
+    const correct = normalizeAnswer(input.value) === normalizeAnswer(correctAnswer);
     answerLocked = true;
 
     if (correct) {
@@ -115,43 +284,98 @@ function checkAnswer() {
         document.getElementById("score").textContent = score;
         feedback.className = "correct";
         feedback.textContent = "Riktig!";
-
-        // Keep a copy before advancing, otherwise the next question can be spoken.
-        // This is called directly from the button/Enter action for mobile browsers.
         speakText(correctAnswer, selectedMode === "ukeord" ? "nb-NO" : "en-US");
 
         currentQuestion++;
-        // Give the correct answer time to finish before the next question is read.
-        setTimeout(() => currentQuestion < questions.length ? showQuestion() : showResult(), 1800);
-    } else {
-        const correctText = entry.en || entry;
-        feedback.className = "wrong";
-        feedback.textContent = `Prøv igjen! Det riktige svaret er ${correctText}.`;
-        input.select();
-        document.getElementById("readEnglishBtn")?.classList.toggle("hidden", selectedMode !== "gloser");
-        speakText(correctText, selectedMode === "ukeord" ? "nb-NO" : "en-US");
-        answerLocked = false;
+        setTimeout(() => {
+            currentQuestion < questions.length ? showQuestion() : showResult();
+        }, 1800);
+        return;
     }
+
+    const correctText = entry.en || entry;
+    feedback.className = "wrong";
+    feedback.textContent = `Prøv igjen! Det riktige svaret er ${correctText}.`;
+    input.select();
+    document.getElementById("readEnglishBtn")?.classList.toggle("hidden", selectedMode !== "gloser");
+    speakText(correctText, selectedMode === "ukeord" ? "nb-NO" : "en-US");
+    answerLocked = false;
 }
+
 function showResult() {
-    document.getElementById("question").textContent = "🏆 Ferdig!";
-    document.getElementById("feedback").innerHTML = `Du fikk ${score} av ${questions.length} poeng!`;
-    document.getElementById("progress").textContent = "Ferdig";
-    document.getElementById("answer").disabled = true;
-    document.getElementById("readEnglishBtn")?.classList.add("hidden");
+    const restartBtn = document.getElementById("restartBtn");
+    const answer = document.getElementById("answer");
+    const feedback = document.getElementById("feedback");
+    const question = document.getElementById("question");
+    const progress = document.getElementById("progress");
+    const readEnglishBtn = document.getElementById("readEnglishBtn");
+
+    if (question) question.textContent = "🏆 Ferdig!";
+    if (feedback) feedback.textContent = `Du fikk ${score} av ${questions.length} poeng!`;
+    if (progress) progress.textContent = "Ferdig";
+    if (answer) answer.disabled = true;
+    if (readEnglishBtn) readEnglishBtn.classList.add("hidden");
+    if (restartBtn) restartBtn.classList.remove("hidden");
 }
+
 function initApp() {
-    document.getElementById("checkBtn").addEventListener("click", checkAnswer);
-    document.getElementById("answer").addEventListener("keydown", e => { if (e.key === "Enter") checkAnswer(); });
-    document.getElementById("saveCustomBtn").addEventListener("click", saveCustomLists);
-    document.getElementById("toggleWordsBtn").addEventListener("click", () => setCustomWordsHidden(!document.getElementById("customWords").classList.contains("words-hidden")));
-    document.getElementById("replayAudioBtn")?.addEventListener("click", () => {
-        if (selectedMode === "ukeord" && questions[currentQuestion]) speakText(questions[currentQuestion]);
+    const answerForm = document.getElementById("answerForm");
+    const checkBtn = document.getElementById("checkBtn");
+    const saveCustomBtn = document.getElementById("saveCustomBtn");
+    const toggleWordsBtn = document.getElementById("toggleWordsBtn");
+    const replayAudioBtn = document.getElementById("replayAudioBtn");
+    const readEnglishBtn = document.getElementById("readEnglishBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const answerInput = document.getElementById("answer");
+
+    document.querySelectorAll(".game-mode").forEach(button => {
+        button.addEventListener("click", () => startGame(button.dataset.mode));
     });
-    document.getElementById("readEnglishBtn")?.addEventListener("click", () => {
-        const item = questions[currentQuestion];
-        if (selectedMode === "gloser" && item?.en) speakText(item.en, "en-US");
-    });
+
+    if (checkBtn && answerForm) {
+        answerForm.addEventListener("submit", event => {
+            event.preventDefault();
+            checkAnswer();
+        });
+    }
+
+    if (answerInput) {
+        answerInput.addEventListener("keydown", event => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                checkAnswer();
+            }
+        });
+    }
+
+    if (saveCustomBtn) saveCustomBtn.addEventListener("click", saveCustomLists);
+
+    if (toggleWordsBtn) {
+        toggleWordsBtn.addEventListener("click", () => {
+            setCustomWordsHidden(!document.getElementById("customWords").classList.contains("words-hidden"));
+        });
+    }
+
+    if (replayAudioBtn) {
+        replayAudioBtn.addEventListener("click", () => {
+            if (selectedMode === "ukeord" && questions[currentQuestion]) speakText(questions[currentQuestion]);
+        });
+    }
+
+    if (readEnglishBtn) {
+        readEnglishBtn.addEventListener("click", () => {
+            const item = questions[currentQuestion];
+            if (selectedMode === "gloser" && item?.en) speakText(item.en, "en-US");
+        });
+    }
+
+    if (restartBtn) {
+        restartBtn.addEventListener("click", () => {
+            if (selectedMode) startGame(selectedMode);
+        });
+    }
+
     loadCustomLists();
 }
+
 document.addEventListener("DOMContentLoaded", initApp);
