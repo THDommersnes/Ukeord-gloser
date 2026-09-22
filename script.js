@@ -71,16 +71,19 @@ function startGame(mode) {
     showQuestion();
 }
 function showQuestion() {
-    const input = document.getElementById("answer"), feedback = document.getElementById("feedback"), question = document.getElementById("question"), replay = document.getElementById("replayAudioBtn");
+    const input = document.getElementById("answer"), feedback = document.getElementById("feedback"), question = document.getElementById("question"), replay = document.getElementById("replayAudioBtn"), readEnglishBtn = document.getElementById("readEnglishBtn");
     if (!input || !feedback || !question || !replay) return;
     answerLocked = false; input.disabled = false; input.value = ""; input.focus(); feedback.textContent = "";
-    document.getElementById("readEnglishBtn")?.classList.add("hidden");
+    readEnglishBtn?.classList.toggle("hidden", selectedMode !== "gloser");
     document.getElementById("progress").textContent = `${currentQuestion + 1} / ${questions.length}`;
     replay.classList.toggle("hidden", selectedMode !== "ukeord");
     if (selectedMode === "ukeord") {
         question.textContent = "🎧 Hør ordet og skriv det du hørte";
         setTimeout(() => { if (!answerLocked) speakText(questions[currentQuestion]); }, 500);
-    } else question.innerHTML = `Hva er engelsk for:<br><br><b>${questions[currentQuestion].no}</b>`;
+    } else {
+        question.innerHTML = `Hva er engelsk for:<br><br><b>${questions[currentQuestion].no}</b>`;
+        if (readEnglishBtn) readEnglishBtn.title = `Les engelsk ord: ${questions[currentQuestion].en}`;
+    }
 }
 function checkAnswer() {
     if (answerLocked) return;
