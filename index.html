@@ -17,28 +17,51 @@
         <button onclick="startGame('gloser')">Gloser</button>
     </div>
 
-    <div class="custom-section">
+    <div class="custom-section" id="customWords">
+        <button
+            id="toggleWordsBtn"
+            type="button"
+            class="toggle-button"
+            aria-pressed="false">
+            Skjul egne ord
+        </button>
+
         <h3>Legg til egne ord</h3>
 
         <div class="custom-grid">
             <div class="custom-column">
-                <label for="customUkeordInput">Ukeord (ett ord per linje)</label>
-                <textarea id="customUkeordInput" placeholder="sjokolade
+                <label for="customUkeordInput">
+                    Ukeord – ett ord per linje
+                </label>
+
+                <textarea
+                    id="customUkeordInput"
+                    placeholder="sjokolade
 kjøkken
 familie"></textarea>
             </div>
 
             <div class="custom-column">
-                <label for="customGloserInput">Gloser (norsk - engelsk)</label>
-                <textarea id="customGloserInput" placeholder="hund - dog
+                <label for="customGloserInput">
+                    Gloser – norsk - engelsk
+                </label>
+
+                <textarea
+                    id="customGloserInput"
+                    placeholder="hund - dog
 katt - cat
 hus - house"></textarea>
             </div>
         </div>
 
         <div class="custom-actions">
-            <button id="saveCustomBtn" type="button">Lagre egne ord</button>
-            <button id="resetCustomBtn" type="button" class="secondary">Tilbakestill</button>
+            <button id="saveCustomBtn" type="button">
+                Lagre egne ord
+            </button>
+
+            <button id="resetCustomBtn" type="button" class="secondary">
+                Tilbakestill
+            </button>
         </div>
 
         <p id="customStatus" class="custom-status" aria-live="polite"></p>
@@ -63,7 +86,9 @@ hus - house"></textarea>
             placeholder="Skriv svaret her..."
             autocomplete="off">
 
-        <button id="checkBtn">Svar</button>
+        <button id="checkBtn" type="button">
+            Svar
+        </button>
 
         <div id="feedback"></div>
     </div>
