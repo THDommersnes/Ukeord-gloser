@@ -100,6 +100,13 @@ function checkAnswer() {
     const input = document.getElementById("answer"), feedback = document.getElementById("feedback"), entry = questions[currentQuestion];
     answerLocked = true;
     const correct = input.value.trim().toLowerCase() === (selectedMode === "ukeord" ? entry.toLowerCase() : entry.en.toLowerCase());
+
+    if (selectedMode === "gloser") {
+        // Speak the English answer directly from the submit action, so it also
+        // works on iPhone/iPad where speech is restricted to user gestures.
+        speakText(entry.en, "en-US");
+    }
+
     if (correct) {
         score++;
         document.getElementById("score").textContent = score;
@@ -112,7 +119,6 @@ function checkAnswer() {
         feedback.textContent = `Prøv igjen! Det riktige svaret er ${entry.en}.`;
         input.select();
         document.getElementById("readEnglishBtn")?.classList.toggle("hidden", selectedMode !== "gloser");
-        if (selectedMode === "gloser") speakText(entry.en, "en-US");
         answerLocked = false;
     }
 }
