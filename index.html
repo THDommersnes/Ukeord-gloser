@@ -11,25 +11,25 @@
 <div class="confetti" aria-hidden="true"></div>
 <div class="container">
     <header class="app-header">
-        <p class="eyebrow">📚 Ordtrening</p>
-        <h1>🏆 Ukeord & Gloser</h1>
+        <p class="eyebrow">Ordtrening</p>
+        <h1>Ukeord & Gloser</h1>
         <p class="subtitle">Klar til trening?</p>
     </header>
     <main>
-        <section class="start-card" aria-label="Velg spill">
+        <section class="start-card" aria-label="Velg trening">
             <p class="section-kicker">Velg en øvelse</p>
             <div class="mode-selector">
                 <button class="game-mode mode-words" data-mode="ukeord" type="button"><span class="button-icon">🎧</span><span>Ukeord</span><small>Hør og skriv</small></button>
-                <button class="game-mode mode-glossary" data-mode="gloser" type="button"><span class="button-icon">🌍</span><span>Gloser</span><small>Oversett ordet</small></button>
+                <button class="game-mode mode-glossary" data-mode="gloser" type="button"><span class="button-icon">🌍</span><span>Gloser</span><small>Oversett</small></button>
             </div>
         </section>
 
         <section class="custom-section" id="customWords">
-            <h2>🧰 Lag din egen øving</h2>
+            <h2>Lag din egen trening</h2>
             <p class="helper-text">Skriv inn alle ordene i ett felt. Ett ord per linje. Gloser skal skrives som <code>hund - dog</code>.</p>
 
             <div class="custom-column combined-column">
-                <label for="customCombinedInput">Alle ordene 📋</label>
+                <label for="customCombinedInput">Alle ordene</label>
                 <textarea id="customCombinedInput" placeholder="sjokolade
 kjøkken
 hund - dog
@@ -37,33 +37,33 @@ katt - cat"></textarea>
             </div>
 
             <div class="custom-actions">
-                <button id="saveCustomBtn" type="button">💾 Lagre egne ord</button>
+                <button id="saveCustomBtn" type="button">Lagre egne ord</button>
             </div>
             <p id="customStatus" class="custom-status" aria-live="polite"></p>
         </section>
 
         <div class="toggle-actions">
-            <button id="toggleWordsBtn" type="button" class="toggle-button" aria-pressed="false" aria-label="Skjul egne ord">🙈 Skjul egne ord</button>
+            <button id="toggleWordsBtn" type="button" class="toggle-button" aria-pressed="false" aria-label="Skjul egne ord">Skjul egne ord</button>
         </div>
 
         <section id="game" class="hidden" aria-live="polite">
             <div class="game-topbar">
-                <div class="score-pill">⭐ <span id="score">0</span> poeng</div>
-                <div class="progress-pill">🏁 <span id="progress"></span></div>
+                <div class="score-pill">Poeng: <span id="score">0</span></div>
+                <div class="progress-pill">Framdrift: <span id="progress"></span></div>
             </div>
             <div class="progress-track"><span id="progressBar"></span></div>
             <div class="question-box"><span class="thinking-emoji" aria-hidden="true">🎯</span><h2 id="question"></h2></div>
-            <button id="replayAudioBtn" class="replay-button hidden" type="button">🔊 Spill av ordet på nytt</button>
+            <button id="replayAudioBtn" class="replay-button hidden" type="button">Spill ordet på nytt</button>
 
             <form id="answerForm">
                 <label class="answer-label" for="answer">Skriv svaret ditt her:</label>
-                <input type="text" id="answer" placeholder="Trykk her og skriv ✨" autocomplete="off" enterkeyhint="done" required>
-                <button id="checkBtn" type="submit">Sjekk svaret 🚀</button>
+                <input type="text" id="answer" placeholder="Skriv her..." autocomplete="off" enterkeyhint="done" required>
+                <button id="checkBtn" type="submit">Sjekk svar</button>
             </form>
 
             <div id="feedback" aria-live="assertive"></div>
-            <button id="readEnglishBtn" class="replay-button hidden" type="button" aria-label="Spill av det engelske ordet">🔊 Spill av engelsk ord</button>
-            <button id="restartBtn" class="replay-button hidden" type="button">🔁 Spill på nytt</button>
+            <button id="readEnglishBtn" class="replay-button hidden" type="button" aria-label="Spill av det engelske ordet">Spill engelsk ord</button>
+            <button id="restartBtn" class="replay-button hidden" type="button">Spill på nytt</button>
         </section>
     </main>
 </div>
