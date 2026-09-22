@@ -1,6 +1,17 @@
 const defaultUkeord = ["sjokolade", "kjøkken", "familie", "sykkel", "håndkle", "vennskap"];
-const defaultGloser = [{ no: "hund", en: "dog" }, { no: "katt", en: "cat" }, { no: "hus", en: "house" }, { no: "bil", en: "car" }, { no: "bok", en: "book" }, { no: "skole", en: "school" }];
-const customStorageKeys = { ukeord: "ukeordCustom", gloser: "gloserCustom", combined: "combinedCustom" };
+const defaultGloser = [
+    { no: "hund", en: "dog" },
+    { no: "katt", en: "cat" },
+    { no: "hus", en: "house" },
+    { no: "bil", en: "car" },
+    { no: "bok", en: "book" },
+    { no: "skole", en: "school" }
+];
+const defaultCombinedText = [
+    ...defaultUkeord,
+    ...defaultGloser.map(item => `${item.no} - ${item.en}`)
+].join("\n");
+const customStorageKeys = { combined: "combinedCustom" };
 let selectedMode = "", questions = [], currentQuestion = 0, score = 0, answerLocked = false;
 
 function shuffle(array) {
@@ -35,52 +46,6 @@ function speakText(text, language = "nb-NO", cancel = true) {
     return true;
 }
 
-function parseUkeordInput(value) {
-    return normalizeText(value)
-        .split(/\n+/)
-        .map(line => line.trim().replace(/^[-*•]\s*/, ""))
-        .filter(Boolean);
-}
-
-function parseGloserInput(value) {
-    return normalizeText(value)
-        .split(/\n+/)
-        .map(line => line.trim().replace(/^[-*•]\s*/, ""))
-        .map(line => {
-            const match = line.match(/^(.+?)\s*(?:-|:|,)\s*(.+)$/);
-            return match ? { no: match[1].trim(), en: match[2].trim() } : null;
-        })
-        .filter(item => item && item.no && item.en);
-}
-
-function parseCombinedInput(value) {
-    const ukeord = [];
-    const gloser = [];
-    const invalid = [];
-
-    normalizeText(value)
-        .split(/\n+/)
-        .map(line => line.trim().replace(/^[-*•]\s*/, ""))
-        .filter(Boolean)
-        .forEach(line => {
-            const match = line.match(/^(.+?)\s*(?:-|:|,)\s*(.+)$/);
-            if (match) {
-                gloser.push({ no: match[1].trim(), en: match[2].trim() });
-                return;
-            }
-
-            const isLikelyGlossary = /\b(?:to|for|med|og)\b/i.test(line) || /\s+-\s+/.test(line);
-            if (isLikelyGlossary) {
-                invalid.push(line);
-                return;
-            }
-
-            ukeord.push(line);
-        });
-
-    return { ukeord: dedupeStrings(ukeord), gloser: dedupeGlossary(gloser), invalid };
-}
-
 function dedupeStrings(values) {
     return [...new Set(values.map(value => normalizeText(value)).filter(Boolean))];
 }
@@ -100,20 +65,54 @@ function dedupeGlossary(items) {
     return result;
 }
 
-function getStoredList(key, fallback) {
-    try {
-        const value = JSON.parse(localStorage.getItem(key) || "[]");
-        return Array.isArray(value) ? value : fallback;
-    } catch (_) { return fallback; }
+function parseCombinedInput(value) {
+    const ukeord = [];
+    const gloser = [];
+    const invalid = [];
+
+    normalizeText(value)
+        .split(/\n+/)
+        .map(line => line.trim().replace(/^[-*•]\s*/, ""))
+        .filter(Boolean)
+        .forEach(line => {
+            const match = line.match(/^(.+?)\s*(?:-|:|,)\s*(.+)$/);
+            if (match && match[1].trim() && match[2].trim()) {
+                gloser.push({ no: match[1].trim(), en: match[2].trim() });
+                return;
+            }
+
+            if (/[\-:]/.test(line) || /,/.test(line)) {
+                invalid.push(line);
+                return;
+            }
+
+            ukeord.push(line);
+        });
+
+    return {
+        ukeord: dedupeStrings(ukeord),
+        gloser: dedupeGlossary(gloser),
+        invalid
+    };
 }
 
-function setStoredValue(key, value) {
+function getStoredCombined() {
     try {
-        if (value && value.length) {
-            localStorage.setItem(key, JSON.stringify(value));
-            return true;
+        const saved = JSON.parse(localStorage.getItem(customStorageKeys.combined) || "{}");
+        if (saved && Array.isArray(saved.ukeord) && Array.isArray(saved.gloser)) {
+            return {
+                ukeord: dedupeStrings(saved.ukeord),
+                gloser: dedupeGlossary(saved.gloser)
+            };
         }
-        localStorage.removeItem(key);
+    } catch (_) {}
+
+    return { ukeord: [], gloser: [] };
+}
+
+function setStoredCombined(data) {
+    try {
+        localStorage.setItem(customStorageKeys.combined, JSON.stringify(data));
         return true;
     } catch (_) {
         return false;
@@ -121,21 +120,20 @@ function setStoredValue(key, value) {
 }
 
 function getUkeordList() {
-    const stored = getStoredList(customStorageKeys.ukeord, []);
-    return stored.length ? stored : defaultUkeord;
+    const saved = getStoredCombined();
+    return saved.ukeord.length ? saved.ukeord : defaultUkeord;
 }
 
 function getGloserList() {
-    const stored = getStoredList(customStorageKeys.gloser, []);
-    return stored.length ? stored : defaultGloser;
+    const saved = getStoredCombined();
+    return saved.gloser.length ? saved.gloser : defaultGloser;
 }
 
 function setCustomStatus(message, error = false) {
     const el = document.getElementById("customStatus");
-    if (el) {
-        el.textContent = message;
-        el.classList.toggle("status-error", error);
-    }
+    if (!el) return;
+    el.textContent = message;
+    el.classList.toggle("status-error", error);
 }
 
 function setCustomWordsHidden(hidden) {
@@ -149,58 +147,51 @@ function setCustomWordsHidden(hidden) {
 }
 
 function loadCustomLists() {
-    const u = document.getElementById("customUkeordInput");
-    const g = document.getElementById("customGloserInput");
-    const c = document.getElementById("customCombinedInput");
-    if (!u || !g || !c) return;
+    const input = document.getElementById("customCombinedInput");
+    if (!input) return;
 
-    const storedUkeord = getStoredList(customStorageKeys.ukeord, defaultUkeord);
-    const storedGloser = getStoredList(customStorageKeys.gloser, defaultGloser);
-
-    u.value = storedUkeord.join("\n");
-    g.value = storedGloser.map(item => `${item.no} - ${item.en}`).join("\n");
-
+    const saved = getStoredCombined();
     const combined = [
-        ...storedUkeord,
-        ...storedGloser.map(item => `${item.no} - ${item.en}`)
+        ...saved.ukeord,
+        ...saved.gloser.map(item => `${item.no} - ${item.en}`)
     ];
-    c.value = combined.join("\n");
+
+    input.value = combined.length ? combined.join("\n") : defaultCombinedText;
 }
 
 function saveCustomLists() {
-    const combinedInput = document.getElementById("customCombinedInput");
-    const ukeordInput = document.getElementById("customUkeordInput");
-    const gloserInput = document.getElementById("customGloserInput");
+    const input = document.getElementById("customCombinedInput");
+    if (!input) return;
 
-    if (!combinedInput || !ukeordInput || !gloserInput) return;
+    const parsed = parseCombinedInput(input.value);
+    const combined = {
+        ukeord: parsed.ukeord,
+        gloser: parsed.gloser
+    };
 
-    const combined = parseCombinedInput(combinedInput.value);
-    const ukeord = dedupeStrings(parseUkeordInput(ukeordInput.value));
-    const gloser = dedupeGlossary(parseGloserInput(gloserInput.value));
+    const saved = setStoredCombined(combined);
+    if (!saved) {
+        setCustomStatus("Kunne ikke lagre ordene i denne nettleseren.", true);
+        return;
+    }
 
-    const mergedUkeord = dedupeStrings([...combined.ukeord, ...ukeord]);
-    const mergedGloser = dedupeGlossary([...combined.gloser, ...gloser]);
-
-    const savedUkeord = setStoredValue(customStorageKeys.ukeord, mergedUkeord) ? mergedUkeord : [];
-    const savedGloser = setStoredValue(customStorageKeys.gloser, mergedGloser) ? mergedGloser : [];
-
-    const mergedCombined = [
-        ...savedUkeord,
-        ...savedGloser.map(item => `${item.no} - ${item.en}`)
+    const serialized = [
+        ...combined.ukeord,
+        ...combined.gloser.map(item => `${item.no} - ${item.en}`)
     ].join("\n");
+    input.value = serialized;
 
-    combinedInput.value = mergedCombined;
-
-    if (!savedUkeord.length && !savedGloser.length) {
+    if (!combined.ukeord.length && !combined.gloser.length) {
         setCustomStatus("Ingen ord ble lagret. Skriv inn minst ett ord eller en gloseliste.", true);
         return;
     }
 
-    if (combined.invalid.length) {
-        setCustomStatus(`Dine egne ord er lagret. ${combined.invalid.length} linje(r) ble ignorert fordi de ikke hadde et gyldig format.`, false);
-    } else {
-        setCustomStatus("Dine egne ord er lagret.");
+    if (parsed.invalid.length) {
+        setCustomStatus(`Dine egne ord er lagret. ${parsed.invalid.length} linje(r) ble ignorert fordi de ikke hadde et gyldig format.`, true);
+        return;
     }
+
+    setCustomStatus("Dine egne ord er lagret.");
 }
 
 function startGame(mode) {
@@ -319,8 +310,11 @@ function showResult() {
 }
 
 function initApp() {
+    document.querySelectorAll(".game-mode").forEach(button => {
+        button.addEventListener("click", () => startGame(button.dataset.mode));
+    });
+
     const answerForm = document.getElementById("answerForm");
-    const checkBtn = document.getElementById("checkBtn");
     const saveCustomBtn = document.getElementById("saveCustomBtn");
     const toggleWordsBtn = document.getElementById("toggleWordsBtn");
     const replayAudioBtn = document.getElementById("replayAudioBtn");
@@ -328,11 +322,7 @@ function initApp() {
     const restartBtn = document.getElementById("restartBtn");
     const answerInput = document.getElementById("answer");
 
-    document.querySelectorAll(".game-mode").forEach(button => {
-        button.addEventListener("click", () => startGame(button.dataset.mode));
-    });
-
-    if (checkBtn && answerForm) {
+    if (answerForm) {
         answerForm.addEventListener("submit", event => {
             event.preventDefault();
             checkAnswer();
@@ -352,7 +342,9 @@ function initApp() {
 
     if (toggleWordsBtn) {
         toggleWordsBtn.addEventListener("click", () => {
-            setCustomWordsHidden(!document.getElementById("customWords").classList.contains("words-hidden"));
+            const customWords = document.getElementById("customWords");
+            if (!customWords) return;
+            setCustomWordsHidden(!customWords.classList.contains("words-hidden"));
         });
     }
 
