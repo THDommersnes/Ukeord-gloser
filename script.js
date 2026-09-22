@@ -25,6 +25,7 @@ let selectedMode = "";
 let questions = [];
 let currentQuestion = 0;
 let score = 0;
+let answerLocked = false;
 
 function shuffle(array) {
     return array.sort(() => Math.random() - 0.5);
@@ -86,7 +87,10 @@ function getGloserList() {
 
 function setCustomStatus(message, isError = false) {
     const status = document.getElementById("customStatus");
-    if (!status) return;
+
+    if (!status) {
+        return;
+    }
 
     status.textContent = message;
     status.style.color = isError ? "#b42318" : "#006b3c";
@@ -96,10 +100,16 @@ function setCustomWordsHidden(hidden) {
     const customWords = document.getElementById("customWords");
     const toggleWordsBtn = document.getElementById("toggleWordsBtn");
 
-    if (!customWords || !toggleWordsBtn) return;
+    if (!customWords || !toggleWordsBtn) {
+        return;
+    }
 
     customWords.classList.toggle("words-hidden", hidden);
-    toggleWordsBtn.textContent = hidden ? "Vis egne ord" : "Skjul egne ord";
+
+    toggleWordsBtn.textContent = hidden
+        ? "Vis egne ord"
+        : "Skjul egne ord";
+
     toggleWordsBtn.setAttribute("aria-pressed", String(hidden));
     toggleWordsBtn.setAttribute(
         "aria-label",
@@ -108,41 +118,66 @@ function setCustomWordsHidden(hidden) {
 }
 
 function loadCustomLists() {
-    const customUkeordInput = document.getElementById("customUkeordInput");
-    const customGloserInput = document.getElementById("customGloserInput");
+    const customUkeordInput =
+        document.getElementById("customUkeordInput");
+
+    const customGloserInput =
+        document.getElementById("customGloserInput");
 
     if (!customUkeordInput || !customGloserInput) {
         return;
     }
 
-    const customUkeord = getStoredList(customStorageKeys.ukeord, defaultUkeord);
-    const customGloser = getStoredList(customStorageKeys.gloser, defaultGloser);
+    const customUkeord = getStoredList(
+        customStorageKeys.ukeord,
+        defaultUkeord
+    );
+
+    const customGloser = getStoredList(
+        customStorageKeys.gloser,
+        defaultGloser
+    );
 
     customUkeordInput.value = customUkeord.join("\n");
+
     customGloserInput.value = customGloser
         .map((entry) => `${entry.no} - ${entry.en}`)
         .join("\n");
 }
 
 function saveCustomLists() {
-    const customUkeordInput = document.getElementById("customUkeordInput");
-    const customGloserInput = document.getElementById("customGloserInput");
+    const customUkeordInput =
+        document.getElementById("customUkeordInput");
+
+    const customGloserInput =
+        document.getElementById("customGloserInput");
 
     if (!customUkeordInput || !customGloserInput) {
         return;
     }
 
-    const customUkeord = parseUkeordInput(customUkeordInput.value);
-    const customGloser = parseGloserInput(customGloserInput.value);
+    const customUkeord = parseUkeordInput(
+        customUkeordInput.value
+    );
+
+    const customGloser = parseGloserInput(
+        customGloserInput.value
+    );
 
     if (customUkeord.length > 0) {
-        localStorage.setItem(customStorageKeys.ukeord, JSON.stringify(customUkeord));
+        localStorage.setItem(
+            customStorageKeys.ukeord,
+            JSON.stringify(customUkeord)
+        );
     } else {
         localStorage.removeItem(customStorageKeys.ukeord);
     }
 
     if (customGloser.length > 0) {
-        localStorage.setItem(customStorageKeys.gloser, JSON.stringify(customGloser));
+        localStorage.setItem(
+            customStorageKeys.gloser,
+            JSON.stringify(customGloser)
+        );
     } else {
         localStorage.removeItem(customStorageKeys.gloser);
     }
@@ -151,8 +186,11 @@ function saveCustomLists() {
 }
 
 function resetCustomLists() {
-    const customUkeordInput = document.getElementById("customUkeordInput");
-    const customGloserInput = document.getElementById("customGloserInput");
+    const customUkeordInput =
+        document.getElementById("customUkeordInput");
+
+    const customGloserInput =
+        document.getElementById("customGloserInput");
 
     if (!customUkeordInput || !customGloserInput) {
         return;
@@ -162,6 +200,7 @@ function resetCustomLists() {
     localStorage.removeItem(customStorageKeys.gloser);
 
     customUkeordInput.value = defaultUkeord.join("\n");
+
     customGloserInput.value = defaultGloser
         .map((entry) => `${entry.no} - ${entry.en}`)
         .join("\n");
@@ -173,6 +212,8 @@ function startGame(mode) {
     selectedMode = mode;
     score = 0;
     currentQuestion = 0;
+    answerLocked = false;
+
     const gameBox = document.getElementById("game");
 
     if (!gameBox) {
@@ -186,16 +227,20 @@ function startGame(mode) {
     }
 
     if (questions.length === 0) {
-        questions = mode === "ukeord" ? [...defaultUkeord] : [...defaultGloser];
+        questions = mode === "ukeord"
+            ? [...defaultUkeord]
+            : [...defaultGloser];
     }
 
     const scoreLabel = document.getElementById("score");
+
     if (scoreLabel) {
         scoreLabel.innerText = score;
     }
 
-    // Skjul ordene automatisk når øvingen starter, slik at de ikke frister.
+    // Skjul ordene når øvingen starter.
     setCustomWordsHidden(true);
+
     gameBox.classList.remove("hidden");
 
     showQuestion();
@@ -206,39 +251,71 @@ function showQuestion() {
     const feedback = document.getElementById("feedback");
     const progress = document.getElementById("progress");
     const question = document.getElementById("question");
+    const checkBtn = document.getElementById("checkBtn");
 
     if (!answerInput || !feedback || !progress || !question) {
         return;
     }
 
-    answerInput.value = "";
-    feedback.innerHTML = "";
+    answerLocked = false;
 
-    progress.innerText = `${currentQuestion + 1} / ${questions.length}`;
+    if (checkBtn) {
+        checkBtn.disabled = false;
+    }
+
+    answerInput.value = "";
+    answerInput.focus();
+
+    feedback.innerHTML = "";
+    feedback.className = "";
+
+    progress.innerText =
+        `${currentQuestion + 1} / ${questions.length}`;
 
     if (selectedMode === "ukeord") {
-        question.innerHTML = `Skriv ordet:<br><br><b>${questions[currentQuestion]}</b>`;
+        question.innerHTML =
+            `Skriv ordet:<br><br><b>${questions[currentQuestion]}</b>`;
     } else {
-        question.innerHTML = `Hva er engelsk for:<br><br><b>${questions[currentQuestion].no}</b>`;
+        question.innerHTML =
+            `Hva er engelsk for:<br><br>` +
+            `<b>${questions[currentQuestion].no}</b>`;
     }
 }
 
 function checkAnswer() {
-    const answerInput = document.getElementById("answer");
-    const feedback = document.getElementById("feedback");
-    const scoreLabel = document.getElementById("score");
-
-    if (!answerInput || !feedback || !scoreLabel || questions.length === 0) {
+    if (answerLocked) {
         return;
     }
 
-    let answer = answerInput.value.trim().toLowerCase();
+    const answerInput = document.getElementById("answer");
+    const feedback = document.getElementById("feedback");
+    const scoreLabel = document.getElementById("score");
+    const checkBtn = document.getElementById("checkBtn");
+
+    if (
+        !answerInput ||
+        !feedback ||
+        !scoreLabel ||
+        questions.length === 0
+    ) {
+        return;
+    }
+
+    answerLocked = true;
+
+    if (checkBtn) {
+        checkBtn.disabled = true;
+    }
+
+    const answer = answerInput.value.trim().toLowerCase();
     let correctAnswer;
 
     if (selectedMode === "ukeord") {
-        correctAnswer = questions[currentQuestion].toLowerCase();
+        correctAnswer =
+            questions[currentQuestion].toLowerCase();
     } else {
-        correctAnswer = questions[currentQuestion].en.toLowerCase();
+        correctAnswer =
+            questions[currentQuestion].en.toLowerCase();
     }
 
     if (answer === correctAnswer) {
@@ -249,7 +326,8 @@ function checkAnswer() {
         feedback.innerHTML = "✅ Riktig!";
     } else {
         feedback.className = "wrong";
-        feedback.innerHTML = `❌ Feil<br>Riktig svar: ${correctAnswer}`;
+        feedback.innerHTML =
+            `❌ Feil<br>Riktig svar: ${correctAnswer}`;
     }
 
     currentQuestion++;
@@ -269,35 +347,52 @@ function showResult() {
     const question = document.getElementById("question");
     const feedback = document.getElementById("feedback");
     const progress = document.getElementById("progress");
+    const answerInput = document.getElementById("answer");
+    const checkBtn = document.getElementById("checkBtn");
 
     if (!question || !feedback || !progress) {
         return;
     }
 
-    let max = questions.length;
+    const max = questions.length;
 
     question.innerHTML = "🏆 Ferdig!";
-    feedback.innerHTML = `Du fikk ${score} av ${max} poeng!`;
+    feedback.className = "correct";
+    feedback.innerHTML =
+        `Du fikk ${score} av ${max} poeng!`;
+
     progress.innerHTML = "Fullført";
 
     if (score === max) {
         feedback.innerHTML += "<br><br>🎉 Fantastisk! 🎉";
+    }
+
+    if (answerInput) {
+        answerInput.value = "";
+        answerInput.disabled = true;
+    }
+
+    if (checkBtn) {
+        checkBtn.disabled = true;
     }
 }
 
 function initApp() {
     const checkBtn = document.getElementById("checkBtn");
     const answerInput = document.getElementById("answer");
-    const saveCustomBtn = document.getElementById("saveCustomBtn");
-    const resetCustomBtn = document.getElementById("resetCustomBtn");
-    const toggleWordsBtn = document.getElementById("toggleWordsBtn");
+    const saveCustomBtn =
+        document.getElementById("saveCustomBtn");
+    const resetCustomBtn =
+        document.getElementById("resetCustomBtn");
+    const toggleWordsBtn =
+        document.getElementById("toggleWordsBtn");
 
     if (checkBtn) {
         checkBtn.addEventListener("click", checkAnswer);
     }
 
     if (answerInput) {
-        answerInput.addEventListener("keydown", function (event) {
+        answerInput.addEventListener("keydown", (event) => {
             if (event.key === "Enter") {
                 checkAnswer();
             }
@@ -313,9 +408,14 @@ function initApp() {
     }
 
     if (toggleWordsBtn) {
-        toggleWordsBtn.addEventListener("click", function () {
-            const customWords = document.getElementById("customWords");
-            const isHidden = customWords && customWords.classList.contains("words-hidden");
+        toggleWordsBtn.addEventListener("click", () => {
+            const customWords =
+                document.getElementById("customWords");
+
+            const isHidden =
+                customWords &&
+                customWords.classList.contains("words-hidden");
+
             setCustomWordsHidden(!isHidden);
         });
     }
