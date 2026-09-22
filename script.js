@@ -18,7 +18,14 @@ function speakText(text, language = "nb-NO", cancel = true) {
     const u = new SpeechSynthesisUtterance(text);
     u.lang = language;
     u.rate = 0.9;
+    try { speechSynthesis.resume(); } catch (_) {}
     speechSynthesis.speak(u);
+}
+
+function speakCorrectAnswer() {
+    const entry = questions[currentQuestion];
+    if (!entry) return;
+    speakText(selectedMode === "ukeord" ? entry : entry.en, selectedMode === "ukeord" ? "nb-NO" : "en-US");
 }
 
 function parseUkeordInput(value) { return value.split(/\n+/).map(x => x.trim().replace(/^[-*•]\s*/, "")).filter(Boolean); }
@@ -71,22 +78,12 @@ function startGame(mode) {
     showQuestion();
 }
 function showQuestion() {
-    const input = document.getElementById("answer");
-    const feedback = document.getElementById("feedback");
-    const question = document.getElementById("question");
-    const replay = document.getElementById("replayAudioBtn");
-    const readEnglishBtn = document.getElementById("readEnglishBtn");
+    const input = document.getElementById("answer"), feedback = document.getElementById("feedback"), question = document.getElementById("question"), replay = document.getElementById("replayAudioBtn"), readEnglishBtn = document.getElementById("readEnglishBtn");
     if (!input || !feedback || !question || !replay) return;
-
-    answerLocked = false;
-    input.disabled = false;
-    input.value = "";
-    input.focus();
-    feedback.textContent = "";
+    answerLocked = false; input.disabled = false; input.value = ""; input.focus(); feedback.textContent = "";
     readEnglishBtn?.classList.toggle("hidden", selectedMode !== "gloser");
     document.getElementById("progress").textContent = `${currentQuestion + 1} / ${questions.length}`;
     replay.classList.toggle("hidden", selectedMode !== "ukeord");
-
     if (selectedMode === "ukeord") {
         question.textContent = "🎧 Hør ordet og skriv det du hørte";
         setTimeout(() => { if (!answerLocked) speakText(questions[currentQuestion]); }, 500);
@@ -100,18 +97,12 @@ function checkAnswer() {
     const input = document.getElementById("answer"), feedback = document.getElementById("feedback"), entry = questions[currentQuestion];
     answerLocked = true;
     const correct = input.value.trim().toLowerCase() === (selectedMode === "ukeord" ? entry.toLowerCase() : entry.en.toLowerCase());
-
-    if (selectedMode === "gloser") {
-        // Speak the English answer directly from the submit action, so it also
-        // works on iPhone/iPad where speech is restricted to user gestures.
-        speakText(entry.en, "en-US");
-    }
-
     if (correct) {
         score++;
         document.getElementById("score").textContent = score;
         feedback.className = "correct";
         feedback.textContent = "Riktig!";
+        speakCorrectAnswer();
         currentQuestion++;
         setTimeout(() => currentQuestion < questions.length ? showQuestion() : showResult(), 1200);
     } else {
