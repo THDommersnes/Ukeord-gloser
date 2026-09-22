@@ -21,7 +21,6 @@ function speakText(text, language = "nb-NO", cancel = true) {
     speechSynthesis.speak(u);
 }
 
-function speakFeedback(correct) { speakText(correct ? "Riktig!" : "Prøv igjen!", "nb-NO"); }
 function parseUkeordInput(value) { return value.split(/\n+/).map(x => x.trim().replace(/^[-*•]\s*/, "")).filter(Boolean); }
 function parseGloserInput(value) {
     return value.split(/\n+/).map(x => x.trim().replace(/^[-*•]\s*/, "")).map(x => {
@@ -73,9 +72,6 @@ function isLessonPlanText(value) {
 }
 function unique(values) { return [...new Map(values.map(x => [x.toLowerCase(), x])).values()]; }
 
-// Reads both the old three-column layout and a two-column "Weekly words" layout.
-// The previous version required words on exactly the same OCR baseline. That is
-// fragile for screenshots, where words in one table row often have different y values.
 function parseOCRTable(data) {
     const words = (data && data.words ? data.words : []).map(word => {
         const box = word.bbox || {};
@@ -197,7 +193,6 @@ function checkAnswer() {
     const input = document.getElementById("answer"), feedback = document.getElementById("feedback"), entry = questions[currentQuestion];
     answerLocked = true;
     const correct = input.value.trim().toLowerCase() === (selectedMode === "ukeord" ? entry.toLowerCase() : entry.en.toLowerCase());
-    speakFeedback(correct);
     if (correct) {
         score++; document.getElementById("score").textContent = score; feedback.className = "correct"; feedback.textContent = "Riktig!"; currentQuestion++;
         setTimeout(() => currentQuestion < questions.length ? showQuestion() : showResult(), 1200);
@@ -226,4 +221,3 @@ function initApp() {
     loadCustomLists();
 }
 document.addEventListener("DOMContentLoaded", initApp);
-
