@@ -15,12 +15,19 @@
         <h1>Ukeord & Gloser</h1>
         <p class="subtitle">Klar til trening?</p>
     </header>
+
     <main>
         <section class="start-card" aria-label="Velg øvelse">
             <p class="section-kicker">Velg en øvelse</p>
             <div class="mode-selector">
-                <button class="game-mode mode-words" data-mode="ukeord" type="button"><span>Ukeord</span><small>Hør og skriv</small></button>
-                <button class="game-mode mode-glossary" data-mode="gloser" type="button"><span>Gloser</span><small>Oversett</small></button>
+                <button class="game-mode mode-words button-mode" data-mode="ukeord" type="button">
+                    <span>Ukeord</span>
+                    <small>Hør og skriv</small>
+                </button>
+                <button class="game-mode mode-glossary button-mode" data-mode="gloser" type="button">
+                    <span>Gloser</span>
+                    <small>Oversett</small>
+                </button>
             </div>
         </section>
 
@@ -37,13 +44,13 @@ katt - cat"></textarea>
             </div>
 
             <div class="custom-actions">
-                <button id="saveCustomBtn" type="button">Lagre egne ord</button>
+                <button id="saveCustomBtn" class="button button-primary" type="button">Lagre egne ord</button>
             </div>
             <p id="customStatus" class="custom-status" aria-live="polite"></p>
         </section>
 
         <div class="toggle-actions">
-            <button id="toggleWordsBtn" type="button" class="toggle-button" aria-pressed="false" aria-label="Skjul egne ord">Skjul egne ord</button>
+            <button id="toggleWordsBtn" class="button button-secondary toggle-button" type="button" aria-pressed="false" aria-label="Skjul egne ord">Skjul egne ord</button>
         </div>
 
         <section id="game" class="hidden" aria-live="polite">
@@ -53,17 +60,17 @@ katt - cat"></textarea>
             </div>
             <div class="progress-track"><span id="progressBar"></span></div>
             <div class="question-box"><h2 id="question"></h2></div>
-            <button id="replayAudioBtn" class="replay-button hidden" type="button">Spill av igjen</button>
+            <button id="replayAudioBtn" class="button button-secondary replay-button hidden" type="button">Spill av igjen</button>
 
             <form id="answerForm">
                 <label class="answer-label" for="answer">Skriv svaret ditt her:</label>
                 <input type="text" id="answer" placeholder="Skriv her..." autocomplete="off" enterkeyhint="done" required>
-                <button id="checkBtn" type="submit">Sjekk svar</button>
+                <button id="checkBtn" class="button button-primary" type="submit">Sjekk svar</button>
             </form>
 
             <div id="feedback" aria-live="assertive"></div>
-            <button id="readEnglishBtn" class="replay-button hidden" type="button" aria-label="Spill av det engelske ordet">Spill engelsk ord</button>
-            <button id="restartBtn" class="replay-button hidden" type="button">Spill på nytt</button>
+            <button id="readEnglishBtn" class="button button-secondary replay-button hidden" type="button" aria-label="Spill av det engelske ordet">Spill engelsk ord</button>
+            <button id="restartBtn" class="button button-secondary replay-button hidden" type="button">Spill på nytt</button>
         </section>
     </main>
 </div>
