@@ -71,12 +71,22 @@ function startGame(mode) {
     showQuestion();
 }
 function showQuestion() {
-    const input = document.getElementById("answer"), feedback = document.getElementById("feedback"), question = document.getElementById("question"), replay = document.getElementById("replayAudioBtn"), readEnglishBtn = document.getElementById("readEnglishBtn");
+    const input = document.getElementById("answer");
+    const feedback = document.getElementById("feedback");
+    const question = document.getElementById("question");
+    const replay = document.getElementById("replayAudioBtn");
+    const readEnglishBtn = document.getElementById("readEnglishBtn");
     if (!input || !feedback || !question || !replay) return;
-    answerLocked = false; input.disabled = false; input.value = ""; input.focus(); feedback.textContent = "";
+
+    answerLocked = false;
+    input.disabled = false;
+    input.value = "";
+    input.focus();
+    feedback.textContent = "";
     readEnglishBtn?.classList.toggle("hidden", selectedMode !== "gloser");
     document.getElementById("progress").textContent = `${currentQuestion + 1} / ${questions.length}`;
     replay.classList.toggle("hidden", selectedMode !== "ukeord");
+
     if (selectedMode === "ukeord") {
         question.textContent = "🎧 Hør ordet og skriv det du hørte";
         setTimeout(() => { if (!answerLocked) speakText(questions[currentQuestion]); }, 500);
@@ -91,11 +101,18 @@ function checkAnswer() {
     answerLocked = true;
     const correct = input.value.trim().toLowerCase() === (selectedMode === "ukeord" ? entry.toLowerCase() : entry.en.toLowerCase());
     if (correct) {
-        score++; document.getElementById("score").textContent = score; feedback.className = "correct"; feedback.textContent = "Riktig!"; currentQuestion++;
+        score++;
+        document.getElementById("score").textContent = score;
+        feedback.className = "correct";
+        feedback.textContent = "Riktig!";
+        currentQuestion++;
         setTimeout(() => currentQuestion < questions.length ? showQuestion() : showResult(), 1200);
     } else {
-        feedback.className = "wrong"; feedback.textContent = `Prøv igjen! Det riktige svaret er ${entry.en}.`; input.select();
+        feedback.className = "wrong";
+        feedback.textContent = `Prøv igjen! Det riktige svaret er ${entry.en}.`;
+        input.select();
         document.getElementById("readEnglishBtn")?.classList.toggle("hidden", selectedMode !== "gloser");
+        if (selectedMode === "gloser") speakText(entry.en, "en-US");
         answerLocked = false;
     }
 }
@@ -111,7 +128,10 @@ function initApp() {
     document.getElementById("answer").addEventListener("keydown", e => { if (e.key === "Enter") checkAnswer(); });
     document.getElementById("saveCustomBtn").addEventListener("click", saveCustomLists);
     document.getElementById("toggleWordsBtn").addEventListener("click", () => setCustomWordsHidden(!document.getElementById("customWords").classList.contains("words-hidden")));
-    document.getElementById("readEnglishBtn")?.addEventListener("click", () => { const item = questions[currentQuestion]; if (item?.en) speakText(item.en, "en-US"); });
+    document.getElementById("readEnglishBtn")?.addEventListener("click", () => {
+        const item = questions[currentQuestion];
+        if (selectedMode === "gloser" && item?.en) speakText(item.en, "en-US");
+    });
     loadCustomLists();
 }
 document.addEventListener("DOMContentLoaded", initApp);
