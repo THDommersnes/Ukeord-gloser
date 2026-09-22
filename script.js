@@ -243,6 +243,7 @@ function showQuestion() {
     const progress = document.getElementById("progress");
     const question = document.getElementById("question");
     const checkBtn = document.getElementById("checkBtn");
+    const replayAudioBtn = document.getElementById("replayAudioBtn");
 
     if (!answerInput || !feedback || !progress || !question) {
         return;
@@ -252,6 +253,11 @@ function showQuestion() {
 
     if (checkBtn) {
         checkBtn.disabled = false;
+    }
+
+    if (replayAudioBtn) {
+        replayAudioBtn.classList.toggle("hidden", selectedMode !== "ukeord");
+        replayAudioBtn.disabled = selectedMode !== "ukeord";
     }
 
     answerInput.value = "";
@@ -340,6 +346,7 @@ function showResult() {
     const progress = document.getElementById("progress");
     const answerInput = document.getElementById("answer");
     const checkBtn = document.getElementById("checkBtn");
+    const replayAudioBtn = document.getElementById("replayAudioBtn");
 
     if (!question || !feedback || !progress) {
         return;
@@ -365,11 +372,17 @@ function showResult() {
     if (checkBtn) {
         checkBtn.disabled = true;
     }
+
+    if (replayAudioBtn) {
+        replayAudioBtn.classList.add("hidden");
+        replayAudioBtn.disabled = true;
+    }
 }
 
 function initApp() {
     const checkBtn = document.getElementById("checkBtn");
     const answerInput = document.getElementById("answer");
+    const replayAudioBtn = document.getElementById("replayAudioBtn");
     const saveCustomBtn =
         document.getElementById("saveCustomBtn");
     const toggleWordsBtn =
@@ -383,6 +396,14 @@ function initApp() {
         answerInput.addEventListener("keydown", (event) => {
             if (event.key === "Enter") {
                 checkAnswer();
+            }
+        });
+    }
+
+    if (replayAudioBtn) {
+        replayAudioBtn.addEventListener("click", () => {
+            if (selectedMode === "ukeord" && questions[currentQuestion]) {
+                speakText(questions[currentQuestion]);
             }
         });
     }
