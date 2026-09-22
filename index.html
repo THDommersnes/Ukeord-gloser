@@ -2,99 +2,89 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#6c5ce7">
     <title>Ukeord & Gloser</title>
 
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div class="confetti" aria-hidden="true"></div>
 
 <div class="container">
     <header class="app-header">
-        <p class="eyebrow">Lær og lek!</p>
+        <p class="eyebrow">🌈 Lær og lek!</p>
         <h1>📚 Ukeord & Gloser 🚀</h1>
-        <p class="subtitle">Velkommen til en morsom treningsside for ord og gloser!</p>
+        <p class="subtitle">Klar for å samle stjerner?</p>
     </header>
 
-    <div class="mode-selector">
-        <button onclick="startGame('ukeord')" type="button">Ukeord 🎯</button>
-        <button onclick="startGame('gloser')" type="button">Gloser 🌍</button>
-    </div>
+    <main>
+        <section class="start-card" aria-label="Velg spill">
+            <p class="section-kicker">Velg en utfordring</p>
+            <div class="mode-selector">
+                <button class="game-mode mode-words" onclick="startGame('ukeord')" type="button">
+                    <span class="button-icon">🎯</span>
+                    <span>Ukeord</span>
+                    <small>Finn riktig ord</small>
+                </button>
+                <button class="game-mode mode-glossary" onclick="startGame('gloser')" type="button">
+                    <span class="button-icon">🌍</span>
+                    <span>Gloser</span>
+                    <small>Oversett ordet</small>
+                </button>
+            </div>
+        </section>
 
-    <div class="custom-section" id="customWords">
-        <h3>Legg til egne ord</h3>
+        <section class="custom-section" id="customWords">
+            <h2>🧰 Lag din egen øving</h2>
+            <p class="helper-text">Skriv inn ord du vil øve på. Ett ord per linje!</p>
 
-        <div class="custom-grid">
-            <div class="custom-column">
-                <label for="customUkeordInput">
-                    Ukeord – ett ord per linje
-                </label>
+            <div class="custom-grid">
+                <div class="custom-column">
+                    <label for="customUkeordInput">Ukeord ✏️</label>
+                    <textarea id="customUkeordInput" placeholder="sjokolade
+kjøkken
+familie"></textarea>
+                </div>
 
-                <textarea
-                    id="customUkeordInput"
-                    placeholder="sjokolade
- kjøkken
- familie"></textarea>
+                <div class="custom-column">
+                    <label for="customGloserInput">Gloser – norsk - engelsk 🌍</label>
+                    <textarea id="customGloserInput" placeholder="hund - dog
+katt - cat
+hus - house"></textarea>
+                </div>
             </div>
 
-            <div class="custom-column">
-                <label for="customGloserInput">
-                    Gloser – norsk - engelsk
-                </label>
-
-                <textarea
-                    id="customGloserInput"
-                    placeholder="hund - dog
- katt - cat
- hus - house"></textarea>
+            <div class="custom-actions">
+                <button id="saveCustomBtn" type="button">💾 Lagre egne ord</button>
             </div>
-        </div>
+            <p id="customStatus" class="custom-status" aria-live="polite"></p>
+        </section>
 
-        <div class="custom-actions">
-            <button id="saveCustomBtn" type="button">
-                Lagre egne ord
+        <div class="toggle-actions">
+            <button id="toggleWordsBtn" type="button" class="toggle-button" aria-pressed="false" aria-label="Skjul egne ord">
+                🙈 Skjul egne ord
             </button>
         </div>
 
-        <p id="customStatus" class="custom-status" aria-live="polite"></p>
-    </div>
+        <section id="game" class="hidden" aria-live="polite">
+            <div class="game-topbar">
+                <div class="score-pill">⭐ <span id="score">0</span> stjerner</div>
+                <div class="progress-pill">🏁 <span id="progress"></span></div>
+            </div>
+            <div class="progress-track"><span id="progressBar"></span></div>
 
-    <div class="toggle-actions">
-        <button
-            id="toggleWordsBtn"
-            type="button"
-            class="toggle-button"
-            aria-pressed="false"
-            aria-label="Skjul egne ord">
-            Skjul egne ord
-        </button>
-    </div>
+            <div class="question-box">
+                <span class="thinking-emoji" aria-hidden="true">🤔</span>
+                <h2 id="question"></h2>
+            </div>
 
-    <div id="game" class="hidden">
-        <div class="score">
-            ⭐ Poeng: <span id="score">0</span>
-        </div>
-
-        <div class="progress">
-            <span id="progress"></span>
-        </div>
-
-        <div class="question-box">
-            <h2 id="question"></h2>
-        </div>
-
-        <input
-            type="text"
-            id="answer"
-            placeholder="Skriv svaret her..."
-            autocomplete="off">
-
-        <button id="checkBtn" type="button">
-            Svar
-        </button>
-
-        <div id="feedback"></div>
-    </div>
+            <label class="answer-label" for="answer">Skriv svaret ditt her:</label>
+            <input type="text" id="answer" placeholder="Trykk her og skriv ✨" autocomplete="off" enterkeyhint="done">
+            <button id="checkBtn" type="button">Sjekk svaret 🚀</button>
+            <div id="feedback" role="status"></div>
+        </section>
+    </main>
 </div>
 
 <script src="script.js"></script>
