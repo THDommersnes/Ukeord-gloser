@@ -31,7 +31,8 @@
                 <textarea id="customCombinedInput" placeholder="sjokolade
 kjøkken
 hund - dog
-katt - cat"></textarea>
+katt - cat" aria-describedby="combinedHelp"></textarea>
+                <small id="combinedHelp" class="field-help">Vanlige ord blir ukeord. Linjer med bindestrek, kolon eller komma blir gloser.</small>
             </div>
             <p class="helper-text">Du kan også bruke de separate feltene under dersom du vil holde ukeord og gloser adskilt.</p>
             <div class="custom-grid">
@@ -40,7 +41,7 @@ kjøkken
 familie"></textarea></div>
                 <div class="custom-column"><label for="customGloserInput">Gloser – norsk - engelsk 🌍</label><textarea id="customGloserInput" placeholder="hund - dog
 katt - cat
-hus - house"></textarea></div>
+hus - house" aria-describedby="gloserHelp"></textarea><small id="gloserHelp" class="field-help">Én gloselinje per rad, for eksempel <code>hund - dog</code>.</small></div>
             </div>
             <div class="custom-actions">
                 <button id="saveCustomBtn" type="button">💾 Lagre egne ord</button>
