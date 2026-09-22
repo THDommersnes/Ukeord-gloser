@@ -123,11 +123,7 @@ h1 {
     background: linear-gradient(145deg, var(--stadium-blue), var(--stadium-blue-dark));
 }
 
-.button-icon {
-    font-size: 2rem;
-}
-
-.game-mode span:not(.button-icon) {
+.game-mode span {
     font-size: 1.15rem;
     font-weight: 800;
 }
@@ -222,10 +218,11 @@ input[type="text"]:focus {
 }
 
 .custom-status {
-    min-height: 1.4em;
+    min-height: 1.6em;
     margin: 12px 0 0;
     color: var(--success);
     font-weight: 700;
+    font-size: 0.95rem;
     line-height: 1.4;
 }
 
@@ -252,6 +249,13 @@ input[type="text"]:focus {
     color: var(--stadium-blue-dark);
     background: rgba(255, 255, 255, 0.85);
     font-weight: 750;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.toggle-button:hover,
+.replay-button:hover {
+    transform: translateY(-1px);
+    border-color: #9ec0ad;
 }
 
 #game {
@@ -310,10 +314,6 @@ input[type="text"]:focus {
 .question-box h2 {
     margin: 0;
     font-size: clamp(1.25rem, 4vw, 1.75rem);
-}
-
-.thinking-emoji {
-    font-size: 2rem;
 }
 
 .replay-button {
@@ -383,10 +383,6 @@ input[type="text"]:focus {
         column-gap: 10px;
         text-align: left;
         padding: 14px 18px;
-    }
-
-    .button-icon {
-        grid-row: 1 / span 2;
     }
 
     .game-mode small {

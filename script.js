@@ -81,7 +81,7 @@ function parseCombinedInput(value) {
                 return;
             }
 
-            if (/[\-:]/.test(line) || /,/.test(line)) {
+            if (/[-:]/.test(line) || /,/.test(line)) {
                 invalid.push(line);
                 return;
             }
@@ -141,7 +141,7 @@ function setCustomWordsHidden(hidden) {
     const button = document.getElementById("toggleWordsBtn");
     if (!section || !button) return;
     section.classList.toggle("words-hidden", hidden);
-    button.textContent = hidden ? "🙉 Vis egne ord" : "🙈 Skjul egne ord";
+    button.textContent = hidden ? "Vis egne ord" : "Skjul egne ord";
     button.setAttribute("aria-pressed", String(hidden));
     button.setAttribute("aria-label", hidden ? "Vis egne ord" : "Skjul egne ord");
 }
@@ -187,7 +187,7 @@ function saveCustomLists() {
     }
 
     if (parsed.invalid.length) {
-        setCustomStatus(`Dine egne ord er lagret. ${parsed.invalid.length} linje(r) ble ignorert fordi de ikke hadde et gyldig format.`, true);
+        setCustomStatus(`Dine egne ord er lagret, men ${parsed.invalid.length} linje(r) ble ignorert fordi de ikke hadde et gyldig format.`, true);
         return;
     }
 
@@ -199,7 +199,7 @@ function startGame(mode) {
 
     const list = mode === "ukeord" ? getUkeordList() : getGloserList();
     if (!list.length) {
-        setCustomStatus("Det finnes ingen ord i denne listen ennå. Legg inn egne ord først.", true);
+        setCustomStatus("Det finnes ingen ord i denne listen. Legg inn egne ord først.", true);
         return;
     }
 
@@ -238,7 +238,7 @@ function showQuestion() {
     question.textContent = "";
 
     if (selectedMode === "ukeord") {
-        question.textContent = "🎧 Hør ordet og skriv det du hørte";
+        question.textContent = "Lytt og skriv ordet";
         setTimeout(() => {
             if (!answerLocked && questions[currentQuestion]) {
                 speakText(questions[currentQuestion]);
@@ -253,7 +253,7 @@ function showQuestion() {
         question.appendChild(document.createElement("br"));
         question.appendChild(document.createElement("br"));
         question.appendChild(strong);
-        if (readEnglishBtn) readEnglishBtn.title = `Les engelsk ord: ${questions[currentQuestion].en}`;
+        if (readEnglishBtn) readEnglishBtn.title = `Spill det engelske ordet: ${questions[currentQuestion].en}`;
     }
 }
 
@@ -274,7 +274,7 @@ function checkAnswer() {
         score++;
         document.getElementById("score").textContent = score;
         feedback.className = "correct";
-        feedback.textContent = "Riktig!";
+        feedback.textContent = "Riktig svar!";
         speakText(correctAnswer, selectedMode === "ukeord" ? "nb-NO" : "en-US");
 
         currentQuestion++;
@@ -286,7 +286,7 @@ function checkAnswer() {
 
     const correctText = entry.en || entry;
     feedback.className = "wrong";
-    feedback.textContent = `Prøv igjen! Det riktige svaret er ${correctText}.`;
+    feedback.textContent = `Prøv igjen. Det riktige svaret er ${correctText}.`;
     input.select();
     document.getElementById("readEnglishBtn")?.classList.toggle("hidden", selectedMode !== "gloser");
     speakText(correctText, selectedMode === "ukeord" ? "nb-NO" : "en-US");
@@ -301,8 +301,8 @@ function showResult() {
     const progress = document.getElementById("progress");
     const readEnglishBtn = document.getElementById("readEnglishBtn");
 
-    if (question) question.textContent = "🏆 Ferdig!";
-    if (feedback) feedback.textContent = `Du fikk ${score} av ${questions.length} poeng!`;
+    if (question) question.textContent = "Ferdig!";
+    if (feedback) feedback.textContent = `Du fikk ${score} av ${questions.length} poeng.`;
     if (progress) progress.textContent = "Ferdig";
     if (answer) answer.disabled = true;
     if (readEnglishBtn) readEnglishBtn.classList.add("hidden");

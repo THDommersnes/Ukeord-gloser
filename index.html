@@ -16,17 +16,17 @@
         <p class="subtitle">Klar til trening?</p>
     </header>
     <main>
-        <section class="start-card" aria-label="Velg trening">
+        <section class="start-card" aria-label="Velg øvelse">
             <p class="section-kicker">Velg en øvelse</p>
             <div class="mode-selector">
-                <button class="game-mode mode-words" data-mode="ukeord" type="button"><span class="button-icon">🎧</span><span>Ukeord</span><small>Hør og skriv</small></button>
-                <button class="game-mode mode-glossary" data-mode="gloser" type="button"><span class="button-icon">🌍</span><span>Gloser</span><small>Oversett</small></button>
+                <button class="game-mode mode-words" data-mode="ukeord" type="button"><span>Ukeord</span><small>Hør og skriv</small></button>
+                <button class="game-mode mode-glossary" data-mode="gloser" type="button"><span>Gloser</span><small>Oversett</small></button>
             </div>
         </section>
 
         <section class="custom-section" id="customWords">
             <h2>Lag din egen trening</h2>
-            <p class="helper-text">Skriv inn alle ordene i ett felt. Ett ord per linje. Gloser skal skrives som <code>hund - dog</code>.</p>
+            <p class="helper-text">Skriv inn alle ordene i én boks. Ett ord per linje. Gloser skal skrives som <code>hund - dog</code>.</p>
 
             <div class="custom-column combined-column">
                 <label for="customCombinedInput">Alle ordene</label>
@@ -52,8 +52,8 @@ katt - cat"></textarea>
                 <div class="progress-pill">Framdrift: <span id="progress"></span></div>
             </div>
             <div class="progress-track"><span id="progressBar"></span></div>
-            <div class="question-box"><span class="thinking-emoji" aria-hidden="true">🎯</span><h2 id="question"></h2></div>
-            <button id="replayAudioBtn" class="replay-button hidden" type="button">Spill ordet på nytt</button>
+            <div class="question-box"><h2 id="question"></h2></div>
+            <button id="replayAudioBtn" class="replay-button hidden" type="button">Spill av igjen</button>
 
             <form id="answerForm">
                 <label class="answer-label" for="answer">Skriv svaret ditt her:</label>
