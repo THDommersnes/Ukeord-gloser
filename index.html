@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#6c5ce7">
+    <meta name="theme-color" content="#0f9d58">
     <title>Ukeord & Gloser</title>
 
     <link rel="stylesheet" href="style.css">
@@ -13,19 +13,19 @@
 
 <div class="container">
     <header class="app-header">
-        <p class="eyebrow">🌈 Lær og lek!</p>
-        <h1>📚 Ukeord & Gloser 🚀</h1>
-        <p class="subtitle">Klar for å samle stjerner?</p>
+        <p class="eyebrow">⚽ Fotballtrening</p>
+        <h1>🏆 Ukeord & Gloser</h1>
+        <p class="subtitle">Klar for kamp?</p>
     </header>
 
     <main>
         <section class="start-card" aria-label="Velg spill">
-            <p class="section-kicker">Velg en utfordring</p>
+            <p class="section-kicker">Velg en øvelse</p>
             <div class="mode-selector">
                 <button class="game-mode mode-words" onclick="startGame('ukeord')" type="button">
-                    <span class="button-icon">🎯</span>
+                    <span class="button-icon">🎧</span>
                     <span>Ukeord</span>
-                    <small>Finn riktig ord</small>
+                    <small>Hør og skriv</small>
                 </button>
                 <button class="game-mode mode-glossary" onclick="startGame('gloser')" type="button">
                     <span class="button-icon">🌍</span>
@@ -69,13 +69,13 @@ hus - house"></textarea>
 
         <section id="game" class="hidden" aria-live="polite">
             <div class="game-topbar">
-                <div class="score-pill">⭐ <span id="score">0</span> stjerner</div>
+                <div class="score-pill">⭐ <span id="score">0</span> poeng</div>
                 <div class="progress-pill">🏁 <span id="progress"></span></div>
             </div>
             <div class="progress-track"><span id="progressBar"></span></div>
 
             <div class="question-box">
-                <span class="thinking-emoji" aria-hidden="true">🤔</span>
+                <span class="thinking-emoji" aria-hidden="true">🎯</span>
                 <h2 id="question"></h2>
             </div>
 

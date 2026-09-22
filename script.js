@@ -31,6 +31,22 @@ function shuffle(array) {
     return array.sort(() => Math.random() - 0.5);
 }
 
+function speakText(text) {
+    if (!text || !("speechSynthesis" in window)) {
+        return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "nb-NO";
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    window.speechSynthesis.speak(utterance);
+}
+
 function parseUkeordInput(rawInput) {
     return rawInput
         .split(/\n+/)
@@ -215,9 +231,7 @@ function startGame(mode) {
         scoreLabel.innerText = score;
     }
 
-    // Skjul ordene når øvingen starter.
     setCustomWordsHidden(true);
-
     gameBox.classList.remove("hidden");
 
     showQuestion();
@@ -243,19 +257,20 @@ function showQuestion() {
     answerInput.value = "";
     answerInput.disabled = false;
     answerInput.focus();
+    answerInput.placeholder = selectedMode === "ukeord"
+        ? "Skriv ordet du hørte"
+        : "Trykk her og skriv ✨";
 
     feedback.innerHTML = "";
     feedback.className = "";
 
-    progress.innerText =
-        `${currentQuestion + 1} / ${questions.length}`;
+    progress.innerText = `${currentQuestion + 1} / ${questions.length}`;
 
     if (selectedMode === "ukeord") {
-        question.innerHTML =
-            `Skriv ordet:<br><br><b>${questions[currentQuestion]}</b>`;
+        question.innerHTML = "🎧 Hør ordet og skriv det du hørte";
+        setTimeout(() => speakText(questions[currentQuestion]), 500);
     } else {
-        question.innerHTML =
-            `Hva er engelsk for:<br><br>` +
+        question.innerHTML = "Hva er engelsk for:<br><br>" +
             `<b>${questions[currentQuestion].no}</b>`;
     }
 }
@@ -289,11 +304,9 @@ function checkAnswer() {
     let correctAnswer;
 
     if (selectedMode === "ukeord") {
-        correctAnswer =
-            questions[currentQuestion].toLowerCase();
+        correctAnswer = questions[currentQuestion].toLowerCase();
     } else {
-        correctAnswer =
-            questions[currentQuestion].en.toLowerCase();
+        correctAnswer = questions[currentQuestion].en.toLowerCase();
     }
 
     if (answer === correctAnswer) {
@@ -336,8 +349,7 @@ function showResult() {
 
     question.innerHTML = "🏆 Ferdig!";
     feedback.className = "correct";
-    feedback.innerHTML =
-        `Du fikk ${score} av ${max} poeng!`;
+    feedback.innerHTML = `Du fikk ${score} av ${max} poeng!`;
 
     progress.innerHTML = "Fullført";
 
