@@ -52,6 +52,10 @@ h1 {
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
+.custom-section.words-hidden {
+    display: none;
+}
+
 .custom-section h3 {
     margin-top: 0;
     margin-bottom: 15px;
