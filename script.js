@@ -1,4 +1,4 @@
-const ukeord = [
+const defaultUkeord = [
     "sjokolade",
     "kjøkken",
     "familie",
@@ -7,7 +7,7 @@ const ukeord = [
     "vennskap"
 ];
 
-const gloser = [
+const defaultGloser = [
     { no: "hund", en: "dog" },
     { no: "katt", en: "cat" },
     { no: "hus", en: "house" },
@@ -15,6 +15,11 @@ const gloser = [
     { no: "bok", en: "book" },
     { no: "skole", en: "school" }
 ];
+
+const customStorageKeys = {
+    ukeord: "ukeordCustom",
+    gloser: "gloserCustom"
+};
 
 let selectedMode = "";
 let questions = [];
@@ -25,15 +30,143 @@ function shuffle(array) {
     return array.sort(() => Math.random() - 0.5);
 }
 
+function parseUkeordInput(rawInput) {
+    return rawInput
+        .split(/\n+/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => line.replace(/^[-*•]\s*/, ""))
+        .filter(Boolean);
+}
+
+function parseGloserInput(rawInput) {
+    return rawInput
+        .split(/\n+/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => line.replace(/^[-*•]\s*/, ""))
+        .filter(Boolean)
+        .map((line) => {
+            const match = line.match(/^(.+?)\s*(?:-|:|,)\s*(.+)$/);
+
+            if (!match) {
+                return null;
+            }
+
+            const no = match[1].trim();
+            const en = match[2].trim();
+
+            if (!no || !en) {
+                return null;
+            }
+
+            return { no, en };
+        })
+        .filter(Boolean);
+}
+
+function getStoredList(key, fallback) {
+    try {
+        const stored = JSON.parse(localStorage.getItem(key) || "[]");
+        return Array.isArray(stored) ? stored : fallback;
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function getUkeordList() {
+    const custom = getStoredList(customStorageKeys.ukeord, []);
+    return custom.length > 0 ? custom : defaultUkeord;
+}
+
+function getGloserList() {
+    const custom = getStoredList(customStorageKeys.gloser, []);
+    return custom.length > 0 ? custom : defaultGloser;
+}
+
+function setCustomStatus(message, isError = false) {
+    const status = document.getElementById("customStatus");
+    if (!status) return;
+
+    status.textContent = message;
+    status.style.color = isError ? "#b42318" : "#006b3c";
+}
+
+function loadCustomLists() {
+    const customUkeordInput = document.getElementById("customUkeordInput");
+    const customGloserInput = document.getElementById("customGloserInput");
+
+    if (!customUkeordInput || !customGloserInput) {
+        return;
+    }
+
+    const customUkeord = getStoredList(customStorageKeys.ukeord, defaultUkeord);
+    const customGloser = getStoredList(customStorageKeys.gloser, defaultGloser);
+
+    customUkeordInput.value = customUkeord.join("\n");
+    customGloserInput.value = customGloser
+        .map((entry) => `${entry.no} - ${entry.en}`)
+        .join("\n");
+}
+
+function saveCustomLists() {
+    const customUkeordInput = document.getElementById("customUkeordInput");
+    const customGloserInput = document.getElementById("customGloserInput");
+
+    if (!customUkeordInput || !customGloserInput) {
+        return;
+    }
+
+    const customUkeord = parseUkeordInput(customUkeordInput.value);
+    const customGloser = parseGloserInput(customGloserInput.value);
+
+    if (customUkeord.length > 0) {
+        localStorage.setItem(customStorageKeys.ukeord, JSON.stringify(customUkeord));
+    } else {
+        localStorage.removeItem(customStorageKeys.ukeord);
+    }
+
+    if (customGloser.length > 0) {
+        localStorage.setItem(customStorageKeys.gloser, JSON.stringify(customGloser));
+    } else {
+        localStorage.removeItem(customStorageKeys.gloser);
+    }
+
+    setCustomStatus("Dine egne ord er lagret.");
+}
+
+function resetCustomLists() {
+    const customUkeordInput = document.getElementById("customUkeordInput");
+    const customGloserInput = document.getElementById("customGloserInput");
+
+    if (!customUkeordInput || !customGloserInput) {
+        return;
+    }
+
+    localStorage.removeItem(customStorageKeys.ukeord);
+    localStorage.removeItem(customStorageKeys.gloser);
+
+    customUkeordInput.value = defaultUkeord.join("\n");
+    customGloserInput.value = defaultGloser
+        .map((entry) => `${entry.no} - ${entry.en}`)
+        .join("\n");
+
+    setCustomStatus("Standardordene er tilbake.");
+}
+
 function startGame(mode) {
     selectedMode = mode;
     score = 0;
     currentQuestion = 0;
 
     if (mode === "ukeord") {
-        questions = shuffle([...ukeord]);
+        questions = shuffle([...getUkeordList()]);
     } else {
-        questions = shuffle([...gloser]);
+        questions = shuffle([...getGloserList()]);
+    }
+
+    if (questions.length === 0) {
+        questions = mode === "ukeord" ? [...defaultUkeord] : [...defaultGloser];
     }
 
     document.getElementById("score").innerText = score;
@@ -83,8 +216,7 @@ function checkAnswer() {
         feedback.innerHTML = "✅ Riktig!";
     } else {
         feedback.className = "wrong";
-        feedback.innerHTML =
-            `❌ Feil<br>Riktig svar: ${correctAnswer}`;
+        feedback.innerHTML = `❌ Feil<br>Riktig svar: ${correctAnswer}`;
     }
 
     currentQuestion++;
@@ -123,3 +255,8 @@ document.getElementById("answer").addEventListener("keydown", function (event) {
         checkAnswer();
     }
 });
+
+document.getElementById("saveCustomBtn").addEventListener("click", saveCustomLists);
+document.getElementById("resetCustomBtn").addEventListener("click", resetCustomLists);
+
+loadCustomLists();
