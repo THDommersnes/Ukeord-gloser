@@ -111,7 +111,6 @@ h1 {
 
 .game-mode:hover { transform: translateY(-2px); filter: brightness(1.04); box-shadow: var(--shadow-strong); }
 .mode-words { background: linear-gradient(135deg, #10a861, #08743e); }
-/* The lighter blue and stronger text styling keep the glossary label readable. */
 .mode-glossary {
     background: linear-gradient(135deg, #236fc4, #124c91);
     border-color: #2f7fd5;
@@ -137,7 +136,13 @@ input[type="text"] {
     transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
-textarea { min-height: 132px; padding: 12px 14px; resize: vertical; line-height: 1.5; }
+/* Gir plass til en hel ordliste uten at tekstfeltet må utvides manuelt. */
+textarea {
+    min-height: 360px;
+    padding: 12px 14px;
+    resize: vertical;
+    line-height: 1.5;
+}
 textarea:focus,
 input[type="text"]:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(15, 157, 88, 0.12); outline: 0; }
 .custom-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
@@ -172,7 +177,7 @@ input[type="text"]:focus { border-color: var(--primary); box-shadow: 0 0 0 4px r
 .progress-pill { padding: 8px 12px; border-radius: 999px; background: var(--surface-soft); color: var(--primary-strong); font-weight: 800; }
 .progress-track { height: 9px; margin: 16px 0 20px; overflow: hidden; border-radius: 999px; background: #e2eee7; }
 #progressBar { display: block; width: 0; height: 100%; background: linear-gradient(90deg, var(--gold), #f5d06a); transition: width 0.25s ease; }
-.question-box { min-height: 150px; display: grid; place-items: center; align-content: center; gap: 8px; text-align: center; padding: 18px; border-radius: var(--radius-md); background: linear-gradient(135deg, #f2fbf5, #e7f5ec); }
+.question-box { min-height: 150px; display: grid; place-items: center; align-content: center; gap: 8px; text-align: center; padding: 18px; border-radius: var(--radius-md); background: linear-gradient(135deg, #f7fcf9, #eef8f1); }
 .question-box h2 { margin: 0; font-size: clamp(1.35rem, 4vw, 1.8rem); line-height: 1.2; }
 .replay-button { display: block; margin: 14px auto; }
 #answerForm { display: grid; gap: 9px; margin-top: 18px; }
@@ -188,6 +193,7 @@ input[type="text"]:focus { border-color: var(--primary); box-shadow: 0 0 0 4px r
     .mode-selector { grid-template-columns: 1fr; }
     .game-mode { min-height: 104px; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 12px; text-align: left; padding: 14px 18px; }
     .game-mode small { grid-column: 2; }
+    textarea { min-height: 280px; }
     .custom-actions { justify-content: stretch; }
     .button { width: 100%; }
     .game-topbar { justify-content: center; }
